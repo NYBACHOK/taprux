@@ -30,22 +30,19 @@ android {
     }
   }
 
-  var rustProfile = "debug"
-  buildTypes {
 
-    getByName("debug") {
-      rustProfile = "debug"
-    }
-    getByName("release") {
-//      signingConfig = signingConfigs.getByName("release")
-      rustProfile = "release"
-    }
-  }
+}
+
+dependencies { implementation(libs.jna) { artifact { type = "aar" } } }
+
+
+android.libraryVariants.configureEach {
+  val profile = if (buildType.name == "release") "release" else "debug"
 
   extensions.configure<CargoExtension>("cargo") {
     module = "../.."
-    libname = "taprux-core"
-    profile = rustProfile
+    libname = "taprux_core"
+    this.profile = profile
     targets = listOf( "arm64", "arm", "x86", "x86_64")
     extraCargoBuildArguments = listOf("--package", "taprux-core", "--features", "uniffi")
 
@@ -54,10 +51,6 @@ android {
     pythonCommand = "python3"
   }
 }
-
-dependencies { implementation(libs.jna) { artifact { type = "aar" } } }
-
-
 
 afterEvaluate {
   // The `cargoBuild` task isn't available until after evaluation.
