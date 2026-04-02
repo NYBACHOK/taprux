@@ -34,7 +34,7 @@ fn main() -> Result<()> {
 
     let name = match args.language {
         Language::Swift => "App",
-        Language::Kotlin => "com.crux.examples.counter",
+        Language::Kotlin => "com.ghuba.taprux.core",
         Language::Typescript => "app",
     };
 

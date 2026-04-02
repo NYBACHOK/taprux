@@ -25,25 +25,39 @@ android {
 
   sourceSets {
     getByName("main") {
-      // types are now generated in kotlin
+      // types generated in kotlin
       kotlin.srcDirs("${projectDir}/../generated")
     }
+  }
+
+  var rustProfile = "debug"
+  buildTypes {
+
+    getByName("debug") {
+      rustProfile = "debug"
+    }
+    getByName("release") {
+//      signingConfig = signingConfigs.getByName("release")
+      rustProfile = "release"
+    }
+  }
+
+  extensions.configure<CargoExtension>("cargo") {
+    module = "../.."
+    libname = "taprux-core"
+    profile = rustProfile
+    targets = listOf( "arm64", "arm", "x86", "x86_64")
+    extraCargoBuildArguments = listOf("--package", "taprux-core", "--features", "uniffi")
+
+    cargoCommand = System.getProperty("user.home") + "/.cargo/bin/cargo"
+    rustcCommand = System.getProperty("user.home") + "/.cargo/bin/rustc"
+    pythonCommand = "python3"
   }
 }
 
 dependencies { implementation(libs.jna) { artifact { type = "aar" } } }
 
-extensions.configure<CargoExtension>("cargo") {
-  module = "../.."
-  libname = "taprux-core"
-  profile = "debug"
-  targets = listOf( "arm64",) //  "arm", "x86", "x86_64"
-  extraCargoBuildArguments = listOf("--package", "taprux-core", "--features", "uniffi")
 
-  cargoCommand = System.getProperty("user.home") + "/.cargo/bin/cargo"
-  rustcCommand = System.getProperty("user.home") + "/.cargo/bin/rustc"
-  pythonCommand = "python3"
-}
 
 afterEvaluate {
   // The `cargoBuild` task isn't available until after evaluation.
