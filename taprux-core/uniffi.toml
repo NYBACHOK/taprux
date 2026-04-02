@@ -1,3 +1,3 @@
 [bindings.kotlin]
-package_name = "com.ghuba.taprux"
+package_name = "com.ghuba.taprux.core"
 cdylib_name = "tapruxlib"

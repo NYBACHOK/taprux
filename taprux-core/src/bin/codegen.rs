@@ -8,7 +8,7 @@ use crux_core::{
 use log::info;
 use uniffi::deps::anyhow::Result;
 
-use shared::Counter;
+use taprux_core::Counter;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum Language {
