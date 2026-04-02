@@ -5,77 +5,79 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   alias(libs.plugins.android.library)
+  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.rust.android)
 }
 
 android {
-  namespace = "com.ghuba.shared"
-  compileSdk {
-    version = release(36) { minorApiLevel = 1 }
-  }
+  namespace = "com.ghuba.taprux"
+  compileSdk = 36
+  ndkVersion = "29.0.14206865"
 
-  defaultConfig {
-    minSdk = 32
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-  }
+  defaultConfig { minSdk = 32 }
 
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
   }
 
+  kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_11 } }
 
   sourceSets {
     getByName("main") {
-      java.srcDir("${projectDir}/../generated")
+      // types are now generated in kotlin
+      kotlin.srcDirs("${projectDir}/../generated")
     }
   }
 }
 
-kotlin {
-  compilerOptions {
-    jvmTarget.set(JvmTarget.JVM_11)
-  }
-}
-
-dependencies {
-  implementation(libs.jna) {
-    artifact { type = "aar" }
-  }
-}
+dependencies { implementation(libs.jna) { artifact { type = "aar" } } }
 
 extensions.configure<CargoExtension>("cargo") {
   module = "../.."
   libname = "taprux-core"
   profile = "debug"
-  targets = listOf("arm64", ) // "arm", "x86", "x86_64"
+  targets = listOf( "arm64",) //  "arm", "x86", "x86_64"
   extraCargoBuildArguments = listOf("--package", "taprux-core", "--features", "uniffi")
 
-  cargoCommand = "cargo"
-  rustcCommand = "rustc"
+  cargoCommand = System.getProperty("user.home") + "/.cargo/bin/cargo"
+  rustcCommand = System.getProperty("user.home") + "/.cargo/bin/rustc"
   pythonCommand = "python3"
 }
 
 afterEvaluate {
-  project.tasks.configureEach {
-    if (name.startsWith("generate") && name.endsWith("Assets")) {
-      dependsOn("cargoBuild")
+  // The `cargoBuild` task isn't available until after evaluation.
+  android.libraryVariants.configureEach {
+    var productFlavor = ""
+    productFlavors.forEach { flavor ->
+      productFlavor += flavor.name.replaceFirstChar { char -> char.uppercaseChar() }
     }
-  }
-  project.tasks.withType(CargoBuildTask::class.java).configureEach {
-    val buildTask = this
-    project.tasks.withType(MergeSourceSetFolders::class.java).configureEach {
-      val folderName = buildTask.toolchain?.folder
-      if (folderName != null) {
-        inputs.dir(layout.buildDirectory.dir("rustJniLibs/$folderName"))
+    val buildType = buildType.name.replaceFirstChar { char -> char.uppercaseChar() }
+
+    tasks.named("generate${productFlavor}${buildType}Assets") {
+      dependsOn(tasks.named("cargoBuild"))
+    }
+
+    // The below dependsOn is needed till https://github.com/mozilla/rust-android-gradle/issues/85
+    // is resolved this fix was got from #118
+    tasks.withType<CargoBuildTask>().forEach { buildTask ->
+      tasks.withType<MergeSourceSetFolders>().configureEach {
+        inputs.dir(
+            File(
+                File(layout.buildDirectory.asFile.get(), "rustJniLibs"),
+                buildTask.toolchain?.folder!!,
+            )
+        )
+        dependsOn(buildTask)
       }
-      dependsOn(buildTask)
     }
   }
 }
 
 // Ensure final JNI merge tasks depend on Cargo
-project.tasks.matching { it.name.matches(Regex("merge.*JniLibFolders")) }.configureEach {
-  inputs.dir(layout.buildDirectory.dir("rustJniLibs/android"))
-  dependsOn("cargoBuild")
-}
+project.tasks
+    .matching { it.name.matches(Regex("merge.*JniLibFolders")) }
+    .configureEach {
+      inputs.dir(layout.buildDirectory.dir("rustJniLibs/android"))
+      dependsOn("cargoBuild")
+    }
