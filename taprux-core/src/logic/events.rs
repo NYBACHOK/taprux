@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
-    app_state::AppState,
+    model::Model,
     database::{
         self,
         events::{RawEvent, RawEventWithChildren},
@@ -17,7 +17,7 @@ pub enum EventCommands {
     Details(u32),
 }
 
-pub(super) async fn handle(cmd: EventCommands, state: &AppState) -> anyhow::Result<()> {
+pub(super) async fn handle(cmd: EventCommands, state: &Model) -> anyhow::Result<()> {
     match cmd {
         EventCommands::List(offset) => list(&state.pool, offset).await,
         EventCommands::Clicked(id) => clicked(&state.pool, id).await,

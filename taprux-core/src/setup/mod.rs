@@ -13,7 +13,7 @@ pub async fn pre_start_setup() -> anyhow::Result<sqlx::Pool<sqlx::Sqlite>> {
 
     tokio::fs::create_dir_all(&*APP_DATA_DIR).await?;
 
-    let db_pool = setup_db(db_location).await?;
+    let db_pool = setup_db(db_location).await?; 
 
     Ok(db_pool)
 }

@@ -1,6 +1,6 @@
 mod events;
 
-use crate::app_state::AppState;
+use crate::model::Model;
 
 pub use self::events::*;
 
@@ -9,7 +9,7 @@ pub enum Commands {
     Events(EventCommands),
 }
 
-async fn command_handler(cmd: Commands, state: &AppState) -> anyhow::Result<()> {
+async fn command_handler(cmd: Commands, state: &Model) -> anyhow::Result<()> {
     match cmd {
         Commands::Events(cmd) => events::handle(cmd, state).await?,
     };

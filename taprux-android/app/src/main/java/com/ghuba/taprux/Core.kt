@@ -11,7 +11,7 @@ import com.ghuba.taprux.core.Requests
 import com.ghuba.taprux.core.ViewModel
 
 open class Core : androidx.lifecycle.ViewModel() {
-  private var core: CoreFfi= CoreFfi()
+  private var core: CoreFfi = CoreFfi()
 
   var view: ViewModel by mutableStateOf(
     ViewModel.bincodeDeserialize(core.view())

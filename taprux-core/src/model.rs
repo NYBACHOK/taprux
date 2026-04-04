@@ -1,8 +1,8 @@
-pub struct AppState {
+pub struct Model {
     pub pool: sqlx::SqlitePool,
 }
 
-impl AppState {
+impl Model {
     pub fn new(pool: sqlx::SqlitePool) -> Self {
         Self { pool }
     }

@@ -1,9 +1,7 @@
 use std::{path::PathBuf, sync::LazyLock};
 
 use crux_core::{
-    App, Command,
-    macros::effect,
-    render::{RenderOperation, render},
+    App, Command, command::CommandContext, macros::effect, render::{RenderOperation, render}
 };
 use facet::Facet;
 use serde::{Deserialize, Serialize};
@@ -12,9 +10,9 @@ pub use crux_core::Core;
 
 pub mod ffi;
 
-mod app_state;
 mod database;
 mod logic;
+mod model;
 mod setup;
 
 static APP_DATA_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
@@ -45,7 +43,6 @@ pub enum Effect {
     Render(RenderOperation),
 }
 
-#[derive(Default)]
 pub struct Model {
     count: isize,
 }
@@ -56,10 +53,9 @@ pub struct ViewModel {
 }
 
 #[derive(Default)]
-pub struct Counter;
+pub struct Application;
 
-// ANCHOR: impl_app
-impl App for Counter {
+impl App for Application {
     type Event = Event;
     type Model = Model;
     type ViewModel = ViewModel;
@@ -71,6 +67,17 @@ impl App for Counter {
             Event::Decrement => model.count -= 1,
             Event::Reset => model.count = 0,
         }
+
+        let command = Command::new(|ctx : CommandContext<Effect, Event> | async move {
+            let handler = ctx.spawn(|_| async move {
+                
+                
+            });
+
+            let res = handler.await;
+
+        } );
+
 
         render()
     }

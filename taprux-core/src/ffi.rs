@@ -3,19 +3,13 @@ use crux_core::{
     bridge::{Bridge, EffectId},
 };
 
-use crate::Counter;
+use crate::{Application, Model};
 
 /// The main interface used by the shell
 #[cfg_attr(feature = "uniffi", derive(uniffi::Object))]
 #[cfg_attr(feature = "wasm_bindgen", wasm_bindgen::prelude::wasm_bindgen)]
 pub struct CoreFFI {
-    core: Bridge<Counter>,
-}
-
-impl Default for CoreFFI {
-    fn default() -> Self {
-        Self::new()
-    }
+    core: Bridge<Application>,
 }
 
 #[cfg_attr(feature = "uniffi", uniffi::export)]
@@ -29,7 +23,7 @@ impl CoreFFI {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            core: Bridge::new(Core::new()),
+            core: Bridge::new(Core::new_with(Application, Model { count: 0 })),
         }
     }
 
