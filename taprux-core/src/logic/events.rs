@@ -1,11 +1,11 @@
 use std::rc::Rc;
 
 use crate::{
-    model::Model,
     database::{
         self,
         events::{RawEvent, RawEventWithChildren},
     },
+    model::Model,
 };
 
 const ELEMENTS_LIMIT: u32 = 100;

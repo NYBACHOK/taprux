@@ -6,6 +6,27 @@ import com.novi.serde.DeserializationError
 import com.novi.serde.Deserializer
 import com.novi.serde.Serializer
 
+fun <T> T?.serializeOptionOf(
+    serializer: Serializer,
+    serializeElement: Serializer.(T) -> Unit,
+) {
+    if (this != null) {
+        serializer.serialize_option_tag(true)
+        serializer.serializeElement(this)
+    } else {
+        serializer.serialize_option_tag(false)
+    }
+}
+
+fun <T> Deserializer.deserializeOptionOf(deserializeElement: (Deserializer) -> T): T? {
+    val tag = deserialize_option_tag()
+    return if (tag) {
+        deserializeElement(this)
+    } else {
+        null
+    }
+}
+
 sealed interface Effect {
     fun serialize(serializer: Serializer)
 
@@ -47,6 +68,47 @@ sealed interface Effect {
 
         @Throws(DeserializationError::class)
         fun bincodeDeserialize(input: ByteArray?): Effect {
+            if (input == null) {
+                throw DeserializationError("Cannot deserialize null array")
+            }
+            val deserializer = BincodeDeserializer(input)
+            val value = deserialize(deserializer)
+            if (deserializer.get_buffer_offset() < input.size) {
+                throw DeserializationError("Some input bytes were not read")
+            }
+            return value
+        }
+    }
+}
+
+data class ErrorModel(
+    val isCritical: Boolean,
+    val description: String,
+) {
+    fun serialize(serializer: Serializer) {
+        serializer.increase_container_depth()
+        serializer.serialize_bool(isCritical)
+        serializer.serialize_str(description)
+        serializer.decrease_container_depth()
+    }
+
+    fun bincodeSerialize(): ByteArray {
+        val serializer = BincodeSerializer()
+        serialize(serializer)
+        return serializer.get_bytes()
+    }
+
+    companion object {
+        fun deserialize(deserializer: Deserializer): ErrorModel {
+            deserializer.increase_container_depth()
+            val isCritical = deserializer.deserialize_bool()
+            val description = deserializer.deserialize_str()
+            deserializer.decrease_container_depth()
+            return ErrorModel(isCritical, description)
+        }
+
+        @Throws(DeserializationError::class)
+        fun bincodeDeserialize(input: ByteArray?): ErrorModel {
             if (input == null) {
                 throw DeserializationError("Cannot deserialize null array")
             }
@@ -179,10 +241,14 @@ data class Request(
 }
 
 data class ViewModel(
+    val error: com.ghuba.taprux.core.ErrorModel? = null,
     val count: String,
 ) {
     fun serialize(serializer: Serializer) {
         serializer.increase_container_depth()
+        error.serializeOptionOf(serializer) {
+            it.serialize(serializer)
+        }
         serializer.serialize_str(count)
         serializer.decrease_container_depth()
     }
@@ -196,9 +262,13 @@ data class ViewModel(
     companion object {
         fun deserialize(deserializer: Deserializer): ViewModel {
             deserializer.increase_container_depth()
+            val error =
+                deserializer.deserializeOptionOf {
+                    com.ghuba.taprux.core.ErrorModel.deserialize(deserializer)
+                }
             val count = deserializer.deserialize_str()
             deserializer.decrease_container_depth()
-            return ViewModel(count)
+            return ViewModel(error, count)
         }
 
         @Throws(DeserializationError::class)

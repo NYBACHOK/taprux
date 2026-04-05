@@ -22,9 +22,9 @@ fn setup_logger() {
     use tracing_subscriber::layer::SubscriberExt;
     use tracing_subscriber::util::SubscriberInitExt;
 
-    tracing_subscriber::registry()
+    #[allow(unused_mut)]
+    let mut registry = tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
-        .with(tracing_android::layer("taprux").expect("valid layer"))
         .with(
             tracing_subscriber::EnvFilter::builder()
                 .with_default_directive(
@@ -42,6 +42,11 @@ fn setup_logger() {
                 .add_directive("sctk=warn".parse().unwrap())
                 .add_directive("hyper_util=warn".parse().unwrap())
                 .add_directive("reqwest=warn".parse().unwrap()),
-        )
-        .init();
+        );
+    #[cfg(target_os = "android")]
+    {
+        registry = registry.with(tracing_android::layer("taprux").expect("valid layer"))
+    }
+
+    registry.init();
 }

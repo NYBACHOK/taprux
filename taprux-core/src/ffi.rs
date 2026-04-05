@@ -1,9 +1,9 @@
 use crux_core::{
     Core,
-    bridge::{Bridge, EffectId},
+    bridge::{BincodeFfiFormat, Bridge, EffectId, FfiFormat},
 };
 
-use crate::{Application, Model, TOKIO_RUNTIME};
+use crate::{Application, ErrorModel, Model, TOKIO_RUNTIME, ViewModel};
 
 pub enum CoreState {
     Corrupted(String),
@@ -90,15 +90,28 @@ impl CoreFFI {
     /// In production you should handle the error properly.
     #[must_use]
     pub fn view(&self) -> Vec<u8> {
+        let mut view_model = Vec::new();
+
         match &self.core {
-            CoreState::Corrupted(e) => panic!("{e}"),
-            CoreState::Normal(bridge) => {
-                let mut view_model = Vec::new();
-                match bridge.view(&mut view_model) {
-                    Ok(()) => view_model,
-                    Err(e) => panic!("{e}"),
-                }
+            CoreState::Corrupted(e) => {
+                BincodeFfiFormat::serialize(
+                    &mut view_model,
+                    &ViewModel {
+                        count: String::new(),
+                        error: Some(ErrorModel {
+                            is_critical: true,
+                            description: e.to_string(),
+                        }),
+                    },
+                )
+                .expect("serialization valid"); // TODO: how could write fail if I write into Vec?
+
+                view_model
             }
+            CoreState::Normal(bridge) => match bridge.view(&mut view_model) {
+                Ok(()) => view_model,
+                Err(e) => panic!("{e}"),
+            },
         }
     }
 }

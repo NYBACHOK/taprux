@@ -2,7 +2,6 @@ use std::{path::PathBuf, sync::LazyLock};
 
 use crux_core::{
     App, Command,
-    command::CommandContext,
     macros::effect,
     render::{RenderOperation, render},
 };
@@ -15,6 +14,7 @@ use tokio::runtime::Runtime;
 pub mod ffi;
 
 mod database;
+
 mod logic;
 mod model;
 mod setup;
@@ -67,8 +67,15 @@ pub struct Model {
     pool: sqlx::SqlitePool,
 }
 
+#[derive(Facet, Serialize, Deserialize, Clone)]
+pub struct ErrorModel {
+    pub is_critical: bool,
+    pub description: String,
+}
+
 #[derive(Facet, Serialize, Deserialize, Clone, Default)]
 pub struct ViewModel {
+    pub error: Option<ErrorModel>,
     pub count: String,
 }
 
@@ -88,11 +95,11 @@ impl App for Application {
             Event::Reset => model.count = 0,
         }
 
-        let command = Command::new(|ctx: CommandContext<Effect, Event>| async move {
-            let handler = ctx.spawn(|_| async move {});
+        // let command = Command::new(|ctx: CommandContext<Effect, Event>| async move {
+        //     let handler = ctx.spawn(|_| async move {});
 
-            let res = handler.await;
-        });
+        //     let res = handler.await;
+        // });
 
         render()
     }
@@ -100,6 +107,7 @@ impl App for Application {
     fn view(&self, model: &Model) -> ViewModel {
         ViewModel {
             count: format!("Count is: {}", model.count),
+            error: None,
         }
     }
 }
