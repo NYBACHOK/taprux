@@ -44,9 +44,6 @@ impl App for Application {
     }
 
     fn view(&self, model: &Model) -> ViewModel {
-        ViewModel {
-            count: format!("Count is: {}", model.count),
-            error: None,
-        }
+        ViewModel::Count(format!("Count is: {}", model.count))
     }
 }
