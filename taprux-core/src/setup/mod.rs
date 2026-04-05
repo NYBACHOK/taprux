@@ -7,8 +7,6 @@ mod db;
 pub async fn pre_start_setup() -> anyhow::Result<sqlx::Pool<sqlx::Sqlite>> {
     const DB_FILE_NAME: &str = ".event-track-db";
 
-    setup_logger();
-
     let db_location = APP_DATA_DIR.join(DB_FILE_NAME);
 
     tokio::fs::create_dir_all(&*APP_DATA_DIR).await?;
@@ -18,7 +16,7 @@ pub async fn pre_start_setup() -> anyhow::Result<sqlx::Pool<sqlx::Sqlite>> {
     Ok(db_pool)
 }
 
-fn setup_logger() {
+pub fn setup_logger() {
     use tracing_subscriber::layer::SubscriberExt;
     use tracing_subscriber::util::SubscriberInitExt;
 

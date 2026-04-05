@@ -5,7 +5,7 @@ use crate::{
         self,
         events::{RawEvent, RawEventWithChildren},
     },
-    model::Model,
+    
 };
 
 const ELEMENTS_LIMIT: u32 = 100;
