@@ -13,10 +13,7 @@ import com.ghuba.taprux.core.ViewModel
 open class Core : androidx.lifecycle.ViewModel() {
   private var core: CoreFfi = CoreFfi()
 
-  var view: ViewModel by mutableStateOf(
-    ViewModel.bincodeDeserialize(core.view())
-  )
-    private set
+  var view: ViewModel by mutableStateOf(ViewModel.bincodeDeserialize(core.view()))
 
   fun update(event: Event) {
     val effects = core.update(event.bincodeSerialize())
