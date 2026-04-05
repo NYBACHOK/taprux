@@ -44,9 +44,7 @@ fn setup_logger() {
                 .add_directive("reqwest=warn".parse().unwrap()),
         );
     #[cfg(target_os = "android")]
-    {
-        registry = registry.with(tracing_android::layer("taprux").expect("valid layer"))
-    }
+    let registry = { registry.with(tracing_android::layer("taprux").expect("valid layer")) };
 
     registry.init();
 }
