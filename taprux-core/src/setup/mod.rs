@@ -13,7 +13,7 @@ pub async fn pre_start_setup() -> anyhow::Result<sqlx::Pool<sqlx::Sqlite>> {
 
     tokio::fs::create_dir_all(&*APP_DATA_DIR).await?;
 
-    let db_pool = setup_db(db_location).await?; 
+    let db_pool = setup_db(db_location).await?;
 
     Ok(db_pool)
 }
@@ -24,6 +24,7 @@ fn setup_logger() {
 
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
+        .with(tracing_android::layer("taprux").expect("valid layer"))
         .with(
             tracing_subscriber::EnvFilter::builder()
                 .with_default_directive(
