@@ -39,20 +39,39 @@ impl App for Application {
                 .then_notify(|event| NotificationBuilder::new(async |ctx| ctx.send_event(event)))
                 .build(),
             Event::QueryResponse(query_response) => {
-                model.query = query_response;
+                match query_response {
+                    QueryResponse::None => (),
+                    QueryResponse::List(list) => {
+                        model.list = list.into_iter().map(|this| (this.id, this)).collect()
+                    }
+                    QueryResponse::Clicked(id) => {
+                        if let Some(item) = model.list.get_mut(&id) {
+                            item.event_occurrence += 1;
+                        }
+                    }
+                    QueryResponse::Details(detailed) => model.details = Some(detailed),
+                }
                 render()
             }
         }
     }
 
-    fn view(&self, model: &Model) -> ViewModel {
-        if let Some(error) = &model.error {
-            return ViewModel::Error(ErrorModel {
-                is_critical: false,
-                description: error.clone(),
-            });
+    fn view(
+        &self,
+        Model {
+            error,
+            details,
+            list,
+        }: &Model,
+    ) -> ViewModel {
+        if let Some(error) = error {
+            return ViewModel::error(error);
         }
 
-        todo!()
+        ViewModel {
+            error: None,
+            details: details.to_owned(),
+            list: list.values().cloned().collect(),
+        }
     }
 }

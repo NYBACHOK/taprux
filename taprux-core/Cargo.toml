@@ -28,7 +28,7 @@ codegen = [
 ]
 
 [dependencies]
-facet = { version = "=0.31", features = ["time"] }
+facet = { version = "=0.31", features = [] }
 crux_core.workspace = true
 serde = { workspace = true, features = ["derive"] }
 sqlx = { version = "0.8", features = [

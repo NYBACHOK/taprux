@@ -47,10 +47,6 @@ impl CoreFFI {
         Self { core }
     }
 
-    /// Send an event to the app and return the effects.
-    /// # Panics
-    /// If the event cannot be deserialized.
-    /// In production you should handle the error properly.
     #[must_use]
     pub fn update(&self, data: &[u8]) -> Vec<u8> {
         let mut effects = Vec::new();
@@ -60,10 +56,6 @@ impl CoreFFI {
         }
     }
 
-    /// Resolve an effect and return the effects.
-    /// # Panics
-    /// If the `data` cannot be deserialized into an effect or the `effect_id` is invalid.
-    /// In production you should handle the error properly.
     #[must_use]
     pub fn resolve(&self, id: u32, data: &[u8]) -> Vec<u8> {
         let mut effects = Vec::new();
@@ -73,10 +65,6 @@ impl CoreFFI {
         }
     }
 
-    /// Get the current `ViewModel`.
-    /// # Panics
-    /// If the view cannot be serialized.
-    /// In production you should handle the error properly.
     #[must_use]
     pub fn view(&self) -> Vec<u8> {
         let mut view_model = Vec::new();

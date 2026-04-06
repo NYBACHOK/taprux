@@ -1,11 +1,12 @@
 use std::sync::OnceLock;
 
+use anyhow::Context;
 use crux_core::{
     capability::Operation,
     middleware::{EffectMiddleware, EffectResolver},
 };
 
-use crate::{TOKIO_RUNTIME, setup::pre_start_setup};
+use crate::{TOKIO_RUNTIME, logic, setup::pre_start_setup};
 
 use super::*;
 
@@ -43,8 +44,28 @@ impl EffectMiddleware for QueryMiddleware {
 }
 
 async fn execute_query(
-    _state: &ApplicationState,
-    _op: QueryRequest,
+    state: &ApplicationState,
+    op: QueryRequest,
 ) -> Result<QueryResponse, anyhow::Error> {
-    todo!()
+    let response = match op {
+        QueryRequest::List => QueryResponse::List(
+            logic::list(&state.db_pool, 0)
+                .await
+                .context("retrieving list of trackables")?,
+        ),
+        QueryRequest::Clicked(id) => {
+            logic::clicked(&state.db_pool, id)
+                .await
+                .context("adding new trackable occurence")?;
+
+            QueryResponse::Clicked(id)
+        }
+        QueryRequest::Details(id) => QueryResponse::Details(
+            logic::details(&state.db_pool, id)
+                .await
+                .context("getting details of multi trackable")?,
+        ),
+    };
+
+    Ok(response)
 }

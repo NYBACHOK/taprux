@@ -7,7 +7,7 @@ pub mod app;
 pub mod ffi;
 
 mod database;
-// mod logic;
+mod logic;
 mod setup;
 
 #[inline]
@@ -23,6 +23,7 @@ fn data_dir() -> PathBuf {
 }
 
 static APP_DATA_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+    // TODO: for tests I need use tmp_dir
     const BUNDLE_ID: &str = "com.ghuba.taprux";
 
     dirs::data_dir()

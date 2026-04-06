@@ -1,7 +1,10 @@
-use crate::app::QueryResponse;
+use std::collections::HashMap;
+
+use crate::logic::{TrackableModel, TrackableWithChildrenModel};
 
 #[derive(Debug, Clone, Default)]
 pub struct Model {
-    pub query: QueryResponse,
     pub error: Option<String>,
+    pub details: Option<TrackableWithChildrenModel>,
+    pub list: HashMap<u32, TrackableModel>,
 }

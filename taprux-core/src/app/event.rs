@@ -1,3 +1,5 @@
+use crate::logic::{TrackableModel, TrackableWithChildrenModel};
+
 use super::*;
 
 #[derive(Facet, Serialize, Deserialize, Clone, Debug, Default)]
@@ -5,7 +7,9 @@ use super::*;
 pub enum QueryResponse {
     #[default]
     None,
-    List,
+    List(Vec<TrackableModel>),
+    Clicked(u32),
+    Details(TrackableWithChildrenModel),
 }
 
 #[derive(Facet, Serialize, Deserialize, Clone, Debug)]
@@ -13,10 +17,12 @@ pub enum QueryResponse {
 pub enum Event {
     // Shell shared events
     QueryRequest(QueryRequest),
-    QueryResponse(QueryResponse),
 
     // Core only events
     #[serde(skip)]
     #[facet(skip)]
     Error(String),
+    #[serde(skip)]
+    #[facet(skip)]
+    QueryResponse(QueryResponse),
 }

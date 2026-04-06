@@ -15,4 +15,6 @@ impl crux_core::capability::Operation for QueryRequest {
 #[repr(C)]
 pub enum QueryRequest {
     List,
+    Clicked(u32),
+    Details(u32),
 }

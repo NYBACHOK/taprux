@@ -1,4 +1,4 @@
-CREATE TABLE events (
+CREATE TABLE trackables (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     svg_icon TEXT NOT NULL,
@@ -7,13 +7,13 @@ CREATE TABLE events (
     user_enabled BOOLEAN NOT NULL DEFAULT true,
 
     parent_id INTEGER NULL,
-    FOREIGN KEY(parent_id) REFERENCES events(id)
+    FOREIGN KEY(parent_id) REFERENCES trackables(id)
 );
 
-CREATE TABLE event_occurs (
+CREATE TABLE trackable_occurs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_id INTEGER NOT NULL,
+    trackable_id INTEGER NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY(event_id) REFERENCES events(id)
+    FOREIGN KEY(trackable_id) REFERENCES trackables(id)
 );
