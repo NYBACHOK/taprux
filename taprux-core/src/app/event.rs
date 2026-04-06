@@ -16,7 +16,7 @@ pub enum QueryResponse {
 #[repr(C)]
 pub enum Event {
     // Shell shared events
-    QueryRequest(QueryRequest),
+    Query(QueryRequest),
 
     // Core only events
     #[serde(skip)]

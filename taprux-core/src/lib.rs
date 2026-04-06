@@ -32,7 +32,7 @@ static APP_DATA_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
         .unwrap_or_else(|| {
             let dir = data_dir();
 
-            tracing::error!(data_dir = %dir.display(), "failed to get data dir will use current dir");
+            tracing::warn!(data_dir = %dir.display(), "failed to get data dir will ");
 
             dir
         })

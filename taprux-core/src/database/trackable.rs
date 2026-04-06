@@ -36,7 +36,7 @@ pub async fn events(
         r#"
         SELECT 
             e.id, e.name, e.svg_icon, e.created_at, e.edited_at, e.user_enabled,
-            (SELECT COUNT(*) FROM trackable_occurs WHERE event_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
+            (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
             (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
         FROM trackables e
         WHERE e.parent_id IS NULL
@@ -52,10 +52,10 @@ pub async fn events(
 /// Records a new occurrence of an event
 pub async fn event_occurrence_create(
     mut e: impl AsMut<SqliteConnection>,
-    event_id: u32,
+    trackable_id: u32,
 ) -> Result<(), sqlx::Error> {
-    sqlx::query("INSERT INTO trackable_occurs (event_id) VALUES ($1);")
-        .bind(event_id)
+    sqlx::query("INSERT INTO trackable_occurs (trackable_id) VALUES ($1);")
+        .bind(trackable_id)
         .bind(OffsetDateTime::now_utc())
         .execute(e.as_mut())
         .await?;
@@ -66,31 +66,31 @@ pub async fn event_occurrence_create(
 /// Fetches a specific event and all its direct children
 pub async fn event_with_children(
     mut e: impl AsMut<SqliteConnection>,
-    event_id: u32,
+    trackable_id: u32,
 ) -> Result<RawTrackableWithChildren, sqlx::Error> {
     let RawTrackable { id, name, svg_icon, created_at, edited_at, user_enabled, event_occurrence, sub_events_count : _ } = sqlx::query_as::<_, RawTrackable>(
         r#"
         SELECT 
             e.id, e.name, e.svg_icon, e.created_at, e.edited_at, e.user_enabled,
-            (SELECT COUNT(*) FROM trackable_occurs WHERE event_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
+            (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
             (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
         FROM trackables e
         WHERE e.parent_id IS NULL AND e.id = $1;
         "#,
     )
-    .bind(event_id)
+    .bind(trackable_id)
     .fetch_one(e.as_mut())
     .await?;
 
     let sub_events = sqlx::query_as::<_, RawTrackable>(
         r#"
         SELECT e.id, e.name, e.svg_icon, e.created_at, e.edited_at,e.user_enabled,
-            (SELECT COUNT(*) FROM trackable_occurs WHERE event_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
+            (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
             0 as sub_events_count
         FROM trackables e
         WHERE e.parent_id = $1;"#,
     )
-    .bind(event_id)
+    .bind(trackable_id)
     .fetch_all(e.as_mut())
     .await?;
 

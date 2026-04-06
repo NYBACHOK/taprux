@@ -31,7 +31,7 @@ impl App for Application {
                 model.error = Some(error);
                 render()
             }
-            Event::QueryRequest(query_request) => Command::request_from_shell(query_request)
+            Event::Query(query_request) => Command::request_from_shell(query_request)
                 .map(|this| match this {
                     QueryResult::Response(query) => Event::QueryResponse(query),
                     QueryResult::Err(err) => Event::Error(err),

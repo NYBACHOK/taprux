@@ -40,7 +40,10 @@ impl EffectMiddleware for QueryMiddleware {
 
             resolver.resolve(match result {
                 Ok(query) => QueryResult::Response(query),
-                Err(err) => QueryResult::Err(err.to_string()),
+                Err(e) => {
+                    tracing::error!(error = %e, "failed to read from database database ");
+                    QueryResult::Err(e.to_string())
+                }
             });
         });
     }

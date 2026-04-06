@@ -171,7 +171,7 @@ sealed interface Event {
         return serializer.get_bytes()
     }
 
-    data class QueryRequest(
+    data class Query(
         val value: com.ghuba.taprux.core.QueryRequest,
     ) : Event {
         override fun serialize(serializer: Serializer) {
@@ -182,11 +182,11 @@ sealed interface Event {
         }
 
         companion object {
-            fun deserialize(deserializer: Deserializer): QueryRequest {
+            fun deserialize(deserializer: Deserializer): Query {
                 deserializer.increase_container_depth()
                 val value = com.ghuba.taprux.core.QueryRequest.deserialize(deserializer)
                 deserializer.decrease_container_depth()
-                return QueryRequest(value)
+                return Query(value)
             }
         }
     }
@@ -196,7 +196,7 @@ sealed interface Event {
         fun deserialize(deserializer: Deserializer): Event {
             val index = deserializer.deserialize_variant_index()
             return when (index) {
-                0 -> QueryRequest.deserialize(deserializer)
+                0 -> Query.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for Event: $index")
             }
         }

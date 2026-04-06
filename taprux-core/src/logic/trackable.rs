@@ -87,7 +87,8 @@ pub async fn list(pool: &sqlx::SqlitePool, offset: u32) -> anyhow::Result<Vec<Tr
     let connection = pool.acquire().await?;
 
     let events = database::trackable::events(connection, offset, ELEMENTS_LIMIT)
-        .await?
+        .await
+        .inspect_err(|e| tracing::error!(error = %e))?
         .into_iter()
         .filter_map(|this| TryFrom::try_from(this).ok())
         .collect::<Vec<TrackableModel>>();
@@ -96,7 +97,9 @@ pub async fn list(pool: &sqlx::SqlitePool, offset: u32) -> anyhow::Result<Vec<Tr
 }
 
 pub async fn clicked(pool: &sqlx::SqlitePool, id: u32) -> anyhow::Result<()> {
-    database::trackable::event_occurrence_create(pool.acquire().await?, id).await?;
+    database::trackable::event_occurrence_create(pool.acquire().await?, id)
+        .await
+        .inspect_err(|e| tracing::error!(error = %e))?;
 
     Ok(())
 }
@@ -107,7 +110,9 @@ pub async fn details(
 ) -> anyhow::Result<TrackableWithChildrenModel> {
     let connection = pool.acquire().await?;
 
-    let event = database::trackable::event_with_children(connection, id).await?;
+    let event = database::trackable::event_with_children(connection, id)
+        .await
+        .inspect_err(|e| tracing::error!(error = %e))?;
 
     Ok(event.try_into()?)
 }
