@@ -18,6 +18,6 @@ impl Deref for ApplicationState {
     type Target = InnerApplicationState;
 
     fn deref(&self) -> &Self::Target {
-        &*self.0
+        &self.0
     }
 }

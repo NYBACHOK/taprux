@@ -16,7 +16,7 @@ uniffi = "=0.29.4"
 uniffi_bindgen = "=0.29.4"
 
 [workspace.lints.rust]
-rust_2018_idioms = "deny"
+rust_2021_idioms = "deny"
 # missing_docs = "deny"
 missing_debug_implementations = "allow"
 future_incompatible = "deny"

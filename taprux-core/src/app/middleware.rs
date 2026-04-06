@@ -24,7 +24,7 @@ impl EffectMiddleware for QueryMiddleware {
 
         TOKIO_RUNTIME.spawn(async move {
             let result = match STATE.get() {
-                Some(state) => execute_query(&state, op).await.map_err(|e| e.to_string()),
+                Some(state) => execute_query(state, op).await.map_err(|e| e.to_string()),
                 None => match pre_start_setup().await {
                     Ok(db_pool) => {
                         let state = STATE.get_or_init(|| ApplicationState::new(db_pool)).clone();
@@ -43,8 +43,8 @@ impl EffectMiddleware for QueryMiddleware {
 }
 
 async fn execute_query(
-    state: &ApplicationState,
-    op: QueryRequest,
+    _state: &ApplicationState,
+    _op: QueryRequest,
 ) -> Result<QueryResponse, anyhow::Error> {
     todo!()
 }
