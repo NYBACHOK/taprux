@@ -7,7 +7,7 @@ use super::*;
 pub enum QueryResponse {
     #[default]
     None,
-    List(Vec<TrackableModel>),
+    Trackables(Vec<TrackableModel>),
     Clicked(u32),
     Details(TrackableWithChildrenModel),
 }

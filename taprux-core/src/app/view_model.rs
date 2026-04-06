@@ -13,7 +13,7 @@ pub struct ErrorModel {
 pub struct ViewModel {
     pub error: Option<ErrorModel>,
     pub details: Option<TrackableWithChildrenModel>,
-    pub list: Vec<TrackableModel>,
+    pub trackables: Vec<TrackableModel>,
 }
 
 impl ViewModel {
@@ -24,7 +24,7 @@ impl ViewModel {
                 description: error.to_owned(),
             }),
             details: None,
-            list: Vec::new(),
+            trackables: Vec::new(),
         }
     }
 }

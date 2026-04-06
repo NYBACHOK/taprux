@@ -65,33 +65,7 @@ fun createInsets(view: View?) {
 @Composable
 fun View(core: Core = viewModel()) {
   val scope = rememberCoroutineScope()
-  Column(
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-      modifier = Modifier.fillMaxSize().padding(10.dp),
-  ) {
-    Text(text = core.view.count, modifier = Modifier.padding(10.dp))
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-      Button(
-          onClick = { scope.launch { core.update(Event.RESET) } },
-          colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-      ) {
-        Text(text = "Reset", color = Color.White)
-      }
-      Button(
-          onClick = { scope.launch { core.update(Event.INCREMENT) } },
-          colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-      ) {
-        Text(text = "Increment", color = Color.White)
-      }
-      Button(
-          onClick = { scope.launch { core.update(Event.DECREMENT) } },
-          colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-      ) {
-        Text(text = "Decrement", color = Color.White)
-      }
-    }
-  }
+
 }
 
 @Preview(showBackground = true)

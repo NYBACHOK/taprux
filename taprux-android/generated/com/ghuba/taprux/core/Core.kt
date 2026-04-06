@@ -325,7 +325,7 @@ sealed interface QueryResponse {
         }
     }
 
-    data class List(
+    data class Trackables(
         val value: List<com.ghuba.taprux.core.TrackableModel>,
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
@@ -338,14 +338,14 @@ sealed interface QueryResponse {
         }
 
         companion object {
-            fun deserialize(deserializer: Deserializer): List {
+            fun deserialize(deserializer: Deserializer): Trackables {
                 deserializer.increase_container_depth()
                 val value =
                     deserializer.deserializeListOf {
                         com.ghuba.taprux.core.TrackableModel.deserialize(deserializer)
                     }
                 deserializer.decrease_container_depth()
-                return List(value)
+                return Trackables(value)
             }
         }
     }
@@ -396,7 +396,7 @@ sealed interface QueryResponse {
             val index = deserializer.deserialize_variant_index()
             return when (index) {
                 0 -> None.deserialize(deserializer)
-                1 -> List.deserialize(deserializer)
+                1 -> Trackables.deserialize(deserializer)
                 2 -> Clicked.deserialize(deserializer)
                 3 -> Details.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for QueryResponse: $index")
@@ -680,7 +680,7 @@ data class TrackableWithChildrenModel(
 data class ViewModel(
     val error: com.ghuba.taprux.core.ErrorModel? = null,
     val details: com.ghuba.taprux.core.TrackableWithChildrenModel? = null,
-    val list: List<com.ghuba.taprux.core.TrackableModel>,
+    val trackables: List<com.ghuba.taprux.core.TrackableModel>,
 ) {
     fun serialize(serializer: Serializer) {
         serializer.increase_container_depth()
@@ -690,7 +690,7 @@ data class ViewModel(
         details.serializeOptionOf(serializer) {
             it.serialize(serializer)
         }
-        list.serialize(serializer) {
+        trackables.serialize(serializer) {
             it.serialize(serializer)
         }
         serializer.decrease_container_depth()
@@ -713,12 +713,12 @@ data class ViewModel(
                 deserializer.deserializeOptionOf {
                     com.ghuba.taprux.core.TrackableWithChildrenModel.deserialize(deserializer)
                 }
-            val list =
+            val trackables =
                 deserializer.deserializeListOf {
                     com.ghuba.taprux.core.TrackableModel.deserialize(deserializer)
                 }
             deserializer.decrease_container_depth()
-            return ViewModel(error, details, list)
+            return ViewModel(error, details, trackables)
         }
 
         @Throws(DeserializationError::class)

@@ -51,7 +51,7 @@ async fn execute_query(
     op: QueryRequest,
 ) -> Result<QueryResponse, anyhow::Error> {
     let response = match op {
-        QueryRequest::List => QueryResponse::List(
+        QueryRequest::List => QueryResponse::Trackables(
             logic::list(&state.db_pool, 0)
                 .await
                 .context("retrieving list of trackables")?,

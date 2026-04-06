@@ -1,34 +1,71 @@
 package com.ghuba.taprux
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.util.Log
 import com.ghuba.taprux.core.CoreFfi
+import com.ghuba.taprux.core.CruxShell
 import com.ghuba.taprux.core.Effect
 import com.ghuba.taprux.core.Event
 import com.ghuba.taprux.core.Request
 import com.ghuba.taprux.core.Requests
 import com.ghuba.taprux.core.ViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 open class Core : androidx.lifecycle.ViewModel() {
-  private var core: CoreFfi = CoreFfi()
+  private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-  var view: ViewModel by mutableStateOf(ViewModel.bincodeDeserialize(core.view()))
+  private val coreFfi =
+      CoreFfi(
+          object : CruxShell {
+            override fun processEffects(bytes: ByteArray) {
+              scope.launch { handleEffects(bytes) }
+            }
+          }
+      )
+
+  private val _viewModel: MutableStateFlow<ViewModel> = MutableStateFlow(getViewModel())
+  val viewModel: StateFlow<ViewModel> = _viewModel.asStateFlow()
 
   fun update(event: Event) {
-    val effects = core.update(event.bincodeSerialize())
-
-    val requests = Requests.bincodeDeserialize(effects)
-    for (request in requests) {
-      processEffect(request)
+    scope.launch {
+      val effects = coreFfi.update(event.bincodeSerialize())
+      handleEffects(effects)
     }
   }
 
-  private fun processEffect(request: Request) {
-    when (val effect = request.effect) {
-      is Effect.Render -> {
-        this.view = ViewModel.bincodeDeserialize(core.view())
-      }
+  private fun handleEffects(effects: ByteArray) {
+    val requests = Requests.bincodeDeserialize(effects)
+    for (request in requests) {
+      processRequest(request)
     }
+  }
+
+  private fun processRequest(request: Request) {
+    Log.d(TAG, "processRequest: $request")
+
+    when (request.effect) {
+      is Effect.Render -> {
+        render()
+      }
+
+      else -> {}
+    }
+  }
+
+  private fun render() {
+    _viewModel.value = getViewModel().also { Log.d(TAG, "render: $it") }
+  }
+
+  private fun getViewModel(): ViewModel {
+    return ViewModel.bincodeDeserialize(coreFfi.view())
+  }
+
+  companion object {
+    private const val TAG = "Core"
   }
 }
