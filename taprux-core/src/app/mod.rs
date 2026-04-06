@@ -33,8 +33,8 @@ impl App for Application {
             }
             Event::QueryRequest(query_request) => Command::request_from_shell(query_request)
                 .map(|this| match this {
-                    Ok(query) => Event::QueryResponse(query),
-                    Err(err) => Event::Error(err),
+                    QueryResult::Response(query) => Event::QueryResponse(query),
+                    QueryResult::Err(err) => Event::Error(err),
                 })
                 .then_notify(|event| NotificationBuilder::new(async |ctx| ctx.send_event(event)))
                 .build(),

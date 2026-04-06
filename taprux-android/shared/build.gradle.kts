@@ -43,7 +43,7 @@ android.libraryVariants.configureEach {
     module = "../.."
     libname = "taprux_core"
     this.profile = profile
-    targets = listOf( "arm64", "arm", "x86", "x86_64")
+    targets = listOf( "arm64", "x86_64") //  "arm", "x86",
     extraCargoBuildArguments = listOf("--package", "taprux-core", "--features", "uniffi")
 
     cargoCommand = System.getProperty("user.home") + "/.cargo/bin/cargo"

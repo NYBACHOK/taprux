@@ -1,8 +1,9 @@
 android-codegen:
-	cd taprux-android && RUST_LOG=info cargo run \
+	cargo build --lib --package taprux-core
+	RUST_LOG=info cargo run \
 		--package taprux-core \
 		--bin codegen \
 		--features codegen \
-		-- --language kotlin --output-dir generated
+		-- --language kotlin --output-dir taprux-android/generated
 
 .PHONY: android-codegen

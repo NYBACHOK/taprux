@@ -3,12 +3,14 @@ use std::{path::PathBuf, sync::LazyLock};
 pub use crux_core::Core;
 use tokio::runtime::Runtime;
 
-pub mod app;
 pub mod ffi;
 
+mod app;
 mod database;
 mod logic;
 mod setup;
+
+pub use app::*;
 
 #[inline]
 fn data_dir() -> PathBuf {

@@ -7,8 +7,15 @@ pub enum Effect {
     Query(QueryRequest),
 }
 
+#[derive(Facet, Serialize, Deserialize, Clone, Debug)]
+#[repr(C)]
+pub enum QueryResult {
+    Response(QueryResponse),
+    Err(String),
+}
+
 impl crux_core::capability::Operation for QueryRequest {
-    type Output = Result<QueryResponse, String>;
+    type Output = QueryResult;
 }
 
 #[derive(Facet, Serialize, Deserialize, Clone, Debug)]
