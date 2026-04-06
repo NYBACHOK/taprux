@@ -1,4 +1,7 @@
-#[derive(Debug, Default)]
+use crate::app::QueryResponse;
+
+#[derive(Debug, Clone, Default)]
 pub struct Model {
-    pub count: isize,
+    pub query: QueryResponse,
+    pub error: Option<String>,
 }

@@ -1,15 +1,28 @@
+use std::sync::Arc;
+
 use crux_core::{
     Core,
-    bridge::{Bridge, EffectId},
+    bridge::{BincodeFfiFormat, EffectId},
+    middleware::{Bridge, HandleEffectLayer, Layer},
 };
 
-use crate::app::{Application, Model};
+use crate::app::{Application, QueryMiddleware};
+
+/// For the Shell to provide
+#[cfg_attr(feature = "uniffi", uniffi::export(with_foreign))]
+pub trait CruxShell: Send + Sync {
+    /// Called when any effects resulting from an asynchronous process
+    /// need processing by the shell.
+    ///
+    /// The bytes are a serialized vector of requests
+    fn process_effects(&self, bytes: Vec<u8>);
+}
 
 /// The main interface used by the shell
 #[cfg_attr(feature = "uniffi", derive(uniffi::Object))]
 #[cfg_attr(feature = "wasm_bindgen", wasm_bindgen::prelude::wasm_bindgen)]
 pub struct CoreFFI {
-    core: Bridge<Application>,
+    core: Bridge<HandleEffectLayer<Core<Application>, QueryMiddleware>, BincodeFfiFormat>,
 }
 
 #[cfg_attr(feature = "uniffi", uniffi::export)]
@@ -21,12 +34,17 @@ impl CoreFFI {
         wasm_bindgen::prelude::wasm_bindgen(constructor)
     )]
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(shell: Arc<dyn CruxShell>) -> Self {
         crate::setup::setup_logger();
 
-        Self {
-            core: Bridge::new(Core::new_with(Application, Model::default())),
-        }
+        let core = Core::<Application>::new()
+            .handle_effects_using(QueryMiddleware)
+            .bridge::<BincodeFfiFormat>(move |effect_bytes| match effect_bytes {
+                Ok(effect) => shell.process_effects(effect),
+                Err(e) => panic!("{e}"),
+            });
+
+        Self { core }
     }
 
     /// Send an event to the app and return the effects.

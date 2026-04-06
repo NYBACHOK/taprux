@@ -6,9 +6,8 @@ pub struct ErrorModel {
     pub description: String,
 }
 
-#[derive(Facet, Serialize, Deserialize, Clone,  )]
+#[derive(Facet, Serialize, Deserialize, Clone)]
 #[repr(C)]
 pub enum ViewModel {
     Error(ErrorModel),
-    Count(String)
 }
