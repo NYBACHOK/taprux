@@ -10,7 +10,7 @@ plugins {
 }
 
 android {
-  namespace = "com.ghuba.taprux"
+  namespace = "com.ghuba.taprux.core"
   compileSdk = 36
   ndkVersion = "29.0.14206865"
 
