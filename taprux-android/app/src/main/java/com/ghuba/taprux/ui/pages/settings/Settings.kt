@@ -35,7 +35,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,7 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -86,10 +84,10 @@ fun SettingsScreen(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to track view")
               }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
+            // Removed hardcoded White color, defaults to MaterialTheme.colorScheme.surface
         )
-      },
-      containerColor = Color.White,
+      }
+      // Removed hardcoded White containerColor, defaults to MaterialTheme.colorScheme.background
   ) { paddingValues ->
     Column(
         modifier =
@@ -134,7 +132,7 @@ fun SettingsScreen(
           }
           Text(
               "Changes how weeks are displayed in trend views",
-              color = Color.Gray,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
               fontSize = 13.sp,
               modifier = Modifier.padding(top = 4.dp),
           )
@@ -177,7 +175,7 @@ fun SettingsScreen(
           }
           Text(
               "Your home timezone controls how days and weeks are displayed. Update this if you've relocated.",
-              color = Color.Gray,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
               fontSize = 13.sp,
               modifier = Modifier.padding(top = 4.dp),
           )
@@ -231,7 +229,11 @@ fun SettingsScreen(
           Button(
               onClick = { showRemoveInsightsConfirm = true },
               modifier = Modifier.weight(1f),
-              colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545)),
+              colors =
+                  ButtonDefaults.buttonColors(
+                      containerColor = MaterialTheme.colorScheme.error,
+                      contentColor = MaterialTheme.colorScheme.onError,
+                  ),
               shape = RoundedCornerShape(8.dp),
           ) {
             Text("Remove access")
@@ -239,7 +241,11 @@ fun SettingsScreen(
           Button(
               onClick = { showResetEverythingConfirm = true },
               modifier = Modifier.weight(1f),
-              colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545)),
+              colors =
+                  ButtonDefaults.buttonColors(
+                      containerColor = MaterialTheme.colorScheme.error,
+                      contentColor = MaterialTheme.colorScheme.onError,
+                  ),
               shape = RoundedCornerShape(8.dp),
           ) {
             Text("Delete Everything")
@@ -250,7 +256,7 @@ fun SettingsScreen(
       // STATUS MESSAGE
       state.statusMessage?.let { msg ->
         Surface(
-            color = Color(0xFFF8F9FA),
+            color = MaterialTheme.colorScheme.surfaceVariant,
             shape = RoundedCornerShape(6.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -258,7 +264,7 @@ fun SettingsScreen(
               text = msg,
               modifier = Modifier.padding(12.dp),
               textAlign = TextAlign.Center,
-              color = Color.DarkGray,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
         }
       }
@@ -268,7 +274,7 @@ fun SettingsScreen(
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
           Text(
               text = "Account Cancellation Process",
-              color = Color.Gray,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
               fontSize = 13.sp,
               textDecoration = TextDecoration.Underline,
               modifier = Modifier.clickable { onCancelAccount() },
@@ -280,7 +286,7 @@ fun SettingsScreen(
       // SettingsFooter(version = state.appVersion)
       Text(
           text = "Version ${state.appVersion}",
-          color = Color.LightGray,
+          color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
           fontSize = 12.sp,
           modifier = Modifier.fillMaxWidth(),
           textAlign = TextAlign.Center,
@@ -329,7 +335,11 @@ fun SettingsScreen(
                 onRestoreBackup()
                 showRestoreConfirm = false
               },
-              colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545)),
+              colors =
+                  ButtonDefaults.buttonColors(
+                      containerColor = MaterialTheme.colorScheme.error,
+                      contentColor = MaterialTheme.colorScheme.onError,
+                  ),
           ) {
             Text("Yes, Restore Backup")
           }
@@ -351,7 +361,11 @@ fun SettingsScreen(
                 onRemoveAccess()
                 showRemoveInsightsConfirm = false
               },
-              colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545)),
+              colors =
+                  ButtonDefaults.buttonColors(
+                      containerColor = MaterialTheme.colorScheme.error,
+                      contentColor = MaterialTheme.colorScheme.onError,
+                  ),
           ) {
             Text("Yes, Remove access")
           }
@@ -377,7 +391,11 @@ fun SettingsScreen(
                 onResetEverything()
                 showResetEverythingConfirm = false
               },
-              colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545)),
+              colors =
+                  ButtonDefaults.buttonColors(
+                      containerColor = MaterialTheme.colorScheme.error,
+                      contentColor = MaterialTheme.colorScheme.onError,
+                  ),
           ) {
             Text("Yes, Delete Everything")
           }
@@ -398,14 +416,14 @@ fun SettingsSection(title: String, content: @Composable () -> Unit) {
         text = title,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        color = Color(0xFF333333),
+        color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(bottom = 16.dp),
     )
     Column(verticalArrangement = Arrangement.spacedBy(24.dp)) { content() }
     HorizontalDivider(
         modifier = Modifier.padding(top = 24.dp),
         thickness = DividerDefaults.Thickness,
-        color = Color(0xFFF0F0F0),
+        color = MaterialTheme.colorScheme.outlineVariant,
     )
   }
 }
@@ -426,7 +444,7 @@ fun SettingToggle(
       Text(title, fontWeight = FontWeight.Medium, fontSize = 15.sp)
       Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
-    Text(subtitle, color = Color.Gray, fontSize = 13.sp)
+    Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
   }
 }
 
@@ -442,6 +460,11 @@ fun SettingButton(title: String, subtitle: String, onClick: () -> Unit) {
     ) {
       Text(title, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
     }
-    Text(subtitle, color = Color.Gray, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
+    Text(
+        subtitle,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = 13.sp,
+        modifier = Modifier.padding(top = 4.dp),
+    )
   }
 }
