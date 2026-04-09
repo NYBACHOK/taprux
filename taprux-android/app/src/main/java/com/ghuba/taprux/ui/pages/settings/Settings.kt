@@ -69,10 +69,10 @@ fun SettingsScreen(
   LaunchedEffect(Unit) { onFirstRun() }
 
   // Dialog visibility states
-  var showTimezoneConfirm by remember { mutableStateOf(false) }
-  var showRestoreConfirm by remember { mutableStateOf(false) }
-  var showRemoveInsightsConfirm by remember { mutableStateOf(false) }
-  var showResetEverythingConfirm by remember { mutableStateOf(false) }
+  val showTimezoneConfirm = remember { mutableStateOf(false) }
+  val showRestoreConfirm = remember { mutableStateOf(false) }
+  val showRemoveInsightsConfirm = remember { mutableStateOf(false) }
+  val showResetEverythingConfirm = remember { mutableStateOf(false) }
 
   val scrollState = rememberScrollState()
 
@@ -85,10 +85,8 @@ fun SettingsScreen(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to track view")
               }
             },
-            // Removed hardcoded White color, defaults to MaterialTheme.colorScheme.surface
         )
       }
-      // Removed hardcoded White containerColor, defaults to MaterialTheme.colorScheme.background
   ) { paddingValues ->
     Column(
         modifier =
@@ -177,7 +175,7 @@ fun SettingsScreen(
           }
 
           OutlinedButton(
-              onClick = { showTimezoneConfirm = true },
+              onClick = { showTimezoneConfirm.value = true },
               modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
               shape = RoundedCornerShape(8.dp),
           ) {
@@ -226,7 +224,7 @@ fun SettingsScreen(
         SettingButton(
             title = "Restore from Backup",
             subtitle = "Replace all data with a backup file (requires restart)",
-            onClick = { showRestoreConfirm = true },
+            onClick = { showRestoreConfirm.value = true },
         )
       }
 
@@ -237,7 +235,7 @@ fun SettingsScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
           Button(
-              onClick = { showRemoveInsightsConfirm = true },
+              onClick = { showRemoveInsightsConfirm.value = true },
               modifier = Modifier.weight(1f),
               colors =
                   ButtonDefaults.buttonColors(
@@ -249,7 +247,7 @@ fun SettingsScreen(
             Text("Remove access")
           }
           Button(
-              onClick = { showResetEverythingConfirm = true },
+              onClick = { showResetEverythingConfirm.value = true },
               modifier = Modifier.weight(1f),
               colors =
                   ButtonDefaults.buttonColors(
@@ -307,9 +305,9 @@ fun SettingsScreen(
 
   // --- DIALOGS ---
 
-  if (showTimezoneConfirm) {
+  if (showTimezoneConfirm.value) {
     AlertDialog(
-        onDismissRequest = { showTimezoneConfirm = false },
+        onDismissRequest = { showTimezoneConfirm.value = false },
         title = { Text("Update Timezone?") },
         text = {
           Text(
@@ -320,21 +318,21 @@ fun SettingsScreen(
           Button(
               onClick = {
                 onSettingsChange(state)
-                showTimezoneConfirm = false
+                showTimezoneConfirm.value = false
               }
           ) {
             Text("Update")
           }
         },
         dismissButton = {
-          TextButton(onClick = { showTimezoneConfirm = false }) { Text("Cancel") }
+          TextButton(onClick = { showTimezoneConfirm.value = false }) { Text("Cancel") }
         },
     )
   }
 
-  if (showRestoreConfirm) {
+  if (showRestoreConfirm.value) {
     AlertDialog(
-        onDismissRequest = { showRestoreConfirm = false },
+        onDismissRequest = { showRestoreConfirm.value = false },
         title = { Text("Restore Backup") },
         text = {
           Text("This will replace ALL data with the backup file and restart the app. Continue?")
@@ -343,7 +341,7 @@ fun SettingsScreen(
           Button(
               onClick = {
                 onRestoreBackup()
-                showRestoreConfirm = false
+                showRestoreConfirm.value = false
               },
               colors =
                   ButtonDefaults.buttonColors(
@@ -354,13 +352,13 @@ fun SettingsScreen(
             Text("Yes, Restore Backup")
           }
         },
-        dismissButton = { TextButton(onClick = { showRestoreConfirm = false }) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = { showRestoreConfirm.value = false }) { Text("Cancel") } },
     )
   }
 
-  if (showRemoveInsightsConfirm) {
+  if (showRemoveInsightsConfirm.value) {
     AlertDialog(
-        onDismissRequest = { showRemoveInsightsConfirm = false },
+        onDismissRequest = { showRemoveInsightsConfirm.value = false },
         title = { Text("Remove Access") },
         text = {
           Text("Remove access? Your tracking data stays. You can re-enter a code any time.")
@@ -369,7 +367,7 @@ fun SettingsScreen(
           Button(
               onClick = {
                 onRemoveAccess()
-                showRemoveInsightsConfirm = false
+                showRemoveInsightsConfirm.value = false
               },
               colors =
                   ButtonDefaults.buttonColors(
@@ -381,14 +379,14 @@ fun SettingsScreen(
           }
         },
         dismissButton = {
-          TextButton(onClick = { showRemoveInsightsConfirm = false }) { Text("Cancel") }
+          TextButton(onClick = { showRemoveInsightsConfirm.value = false }) { Text("Cancel") }
         },
     )
   }
 
-  if (showResetEverythingConfirm) {
+  if (showResetEverythingConfirm.value) {
     AlertDialog(
-        onDismissRequest = { showResetEverythingConfirm = false },
+        onDismissRequest = { showResetEverythingConfirm.value = false },
         title = { Text("Delete Everything") },
         text = {
           Text(
@@ -399,7 +397,7 @@ fun SettingsScreen(
           Button(
               onClick = {
                 onResetEverything()
-                showResetEverythingConfirm = false
+                showResetEverythingConfirm.value = false
               },
               colors =
                   ButtonDefaults.buttonColors(
@@ -411,7 +409,7 @@ fun SettingsScreen(
           }
         },
         dismissButton = {
-          TextButton(onClick = { showResetEverythingConfirm = false }) { Text("Cancel") }
+          TextButton(onClick = { showResetEverythingConfirm.value = false }) { Text("Cancel") }
         },
     )
   }
