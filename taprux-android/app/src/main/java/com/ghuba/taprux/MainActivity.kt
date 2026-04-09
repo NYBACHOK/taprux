@@ -33,7 +33,7 @@ import com.ghuba.taprux.core.Event
 import com.ghuba.taprux.core.QueryRequest
 import com.ghuba.taprux.ui.pages.insights.InsightsPage
 import com.ghuba.taprux.ui.pages.library.LibraryPage
-import com.ghuba.taprux.ui.pages.settings.SettingsPage
+import com.ghuba.taprux.ui.pages.settings.SettingsScreen
 import com.ghuba.taprux.ui.pages.track.TrackPage
 import com.ghuba.taprux.ui.theme.TapruxTheme
 
@@ -93,7 +93,19 @@ fun View(core: Core) {
         AppPage.Library -> LibraryPage()
         AppPage.Track -> TrackPage(trackables = viewState.trackables)
         AppPage.Insights -> InsightsPage()
-        AppPage.Settings -> SettingsPage()
+        AppPage.Settings ->
+            SettingsScreen(
+                state = viewState.settings,
+                onFirstRun = { core.update(Event.Query(QueryRequest.Settings)) },
+                onBackClick = { activePage.value = AppPage.Track },
+                onSettingsChange = { core.update(Event.Query(QueryRequest.UpdateSettings(it))) },
+                onExportCsv = {},
+                onCreateBackup = {},
+                onRestoreBackup = {},
+                onRemoveAccess = {},
+                onResetEverything = {},
+                onCancelAccount = {},
+            )
       }
     }
 

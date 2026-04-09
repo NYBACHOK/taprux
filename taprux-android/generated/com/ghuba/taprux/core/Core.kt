@@ -46,6 +46,79 @@ fun <T> Deserializer.deserializeOptionOf(deserializeElement: (Deserializer) -> T
     }
 }
 
+data class ApplicationSettings(
+    val appVersion: String,
+    val weekStartDay: com.ghuba.taprux.core.WeekDay,
+    val showTrackableNames: Boolean,
+    val homeTimezone: String,
+    val deviceTimezone: String,
+    val notifInsightsReports: Boolean,
+    val notifHealthHerstory: Boolean,
+    val isInsightsActivated: Boolean,
+    val hasAccess: Boolean,
+    val isTrial: Boolean,
+    val statusMessage: String? = null,
+) {
+    fun serialize(serializer: Serializer) {
+        serializer.increase_container_depth()
+        serializer.serialize_str(appVersion)
+        weekStartDay.serialize(serializer)
+        serializer.serialize_bool(showTrackableNames)
+        serializer.serialize_str(homeTimezone)
+        serializer.serialize_str(deviceTimezone)
+        serializer.serialize_bool(notifInsightsReports)
+        serializer.serialize_bool(notifHealthHerstory)
+        serializer.serialize_bool(isInsightsActivated)
+        serializer.serialize_bool(hasAccess)
+        serializer.serialize_bool(isTrial)
+        statusMessage.serializeOptionOf(serializer) {
+            serializer.serialize_str(it)
+        }
+        serializer.decrease_container_depth()
+    }
+
+    fun bincodeSerialize(): ByteArray {
+        val serializer = BincodeSerializer()
+        serialize(serializer)
+        return serializer.get_bytes()
+    }
+
+    companion object {
+        fun deserialize(deserializer: Deserializer): ApplicationSettings {
+            deserializer.increase_container_depth()
+            val appVersion = deserializer.deserialize_str()
+            val weekStartDay = com.ghuba.taprux.core.WeekDay.deserialize(deserializer)
+            val showTrackableNames = deserializer.deserialize_bool()
+            val homeTimezone = deserializer.deserialize_str()
+            val deviceTimezone = deserializer.deserialize_str()
+            val notifInsightsReports = deserializer.deserialize_bool()
+            val notifHealthHerstory = deserializer.deserialize_bool()
+            val isInsightsActivated = deserializer.deserialize_bool()
+            val hasAccess = deserializer.deserialize_bool()
+            val isTrial = deserializer.deserialize_bool()
+            val statusMessage =
+                deserializer.deserializeOptionOf {
+                    deserializer.deserialize_str()
+                }
+            deserializer.decrease_container_depth()
+            return ApplicationSettings(appVersion, weekStartDay, showTrackableNames, homeTimezone, deviceTimezone, notifInsightsReports, notifHealthHerstory, isInsightsActivated, hasAccess, isTrial, statusMessage)
+        }
+
+        @Throws(DeserializationError::class)
+        fun bincodeDeserialize(input: ByteArray?): ApplicationSettings {
+            if (input == null) {
+                throw DeserializationError("Cannot deserialize null array")
+            }
+            val deserializer = BincodeDeserializer(input)
+            val value = deserialize(deserializer)
+            if (deserializer.get_buffer_offset() < input.size) {
+                throw DeserializationError("Some input bytes were not read")
+            }
+            return value
+        }
+    }
+}
+
 sealed interface Effect {
     fun serialize(serializer: Serializer)
 
@@ -277,6 +350,38 @@ sealed interface QueryRequest {
         }
     }
 
+    data object Settings: QueryRequest {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(3)
+            serializer.decrease_container_depth()
+        }
+
+        fun deserialize(deserializer: Deserializer): Settings {
+            return Settings
+        }
+    }
+
+    data class UpdateSettings(
+        val value: com.ghuba.taprux.core.ApplicationSettings,
+    ) : QueryRequest {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(4)
+            value.serialize(serializer)
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): UpdateSettings {
+                deserializer.increase_container_depth()
+                val value = com.ghuba.taprux.core.ApplicationSettings.deserialize(deserializer)
+                deserializer.decrease_container_depth()
+                return UpdateSettings(value)
+            }
+        }
+    }
+
     companion object {
         @Throws(DeserializationError::class)
         fun deserialize(deserializer: Deserializer): QueryRequest {
@@ -285,6 +390,8 @@ sealed interface QueryRequest {
                 0 -> List.deserialize(deserializer)
                 1 -> Clicked.deserialize(deserializer)
                 2 -> Details.deserialize(deserializer)
+                3 -> Settings.deserialize(deserializer)
+                4 -> UpdateSettings.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for QueryRequest: $index")
             }
         }
@@ -390,6 +497,26 @@ sealed interface QueryResponse {
         }
     }
 
+    data class Settings(
+        val value: com.ghuba.taprux.core.ApplicationSettings,
+    ) : QueryResponse {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(4)
+            value.serialize(serializer)
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): Settings {
+                deserializer.increase_container_depth()
+                val value = com.ghuba.taprux.core.ApplicationSettings.deserialize(deserializer)
+                deserializer.decrease_container_depth()
+                return Settings(value)
+            }
+        }
+    }
+
     companion object {
         @Throws(DeserializationError::class)
         fun deserialize(deserializer: Deserializer): QueryResponse {
@@ -399,6 +526,7 @@ sealed interface QueryResponse {
                 1 -> Trackables.deserialize(deserializer)
                 2 -> Clicked.deserialize(deserializer)
                 3 -> Details.deserialize(deserializer)
+                4 -> Settings.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for QueryResponse: $index")
             }
         }
@@ -681,6 +809,7 @@ data class ViewModel(
     val error: com.ghuba.taprux.core.ErrorModel? = null,
     val details: com.ghuba.taprux.core.TrackableWithChildrenModel? = null,
     val trackables: List<com.ghuba.taprux.core.TrackableModel>,
+    val settings: com.ghuba.taprux.core.ApplicationSettings,
 ) {
     fun serialize(serializer: Serializer) {
         serializer.increase_container_depth()
@@ -693,6 +822,7 @@ data class ViewModel(
         trackables.serialize(serializer) {
             it.serialize(serializer)
         }
+        settings.serialize(serializer)
         serializer.decrease_container_depth()
     }
 
@@ -717,12 +847,57 @@ data class ViewModel(
                 deserializer.deserializeListOf {
                     com.ghuba.taprux.core.TrackableModel.deserialize(deserializer)
                 }
+            val settings = com.ghuba.taprux.core.ApplicationSettings.deserialize(deserializer)
             deserializer.decrease_container_depth()
-            return ViewModel(error, details, trackables)
+            return ViewModel(error, details, trackables, settings)
         }
 
         @Throws(DeserializationError::class)
         fun bincodeDeserialize(input: ByteArray?): ViewModel {
+            if (input == null) {
+                throw DeserializationError("Cannot deserialize null array")
+            }
+            val deserializer = BincodeDeserializer(input)
+            val value = deserialize(deserializer)
+            if (deserializer.get_buffer_offset() < input.size) {
+                throw DeserializationError("Some input bytes were not read")
+            }
+            return value
+        }
+    }
+}
+
+enum class WeekDay {
+    SUNDAY,
+    MONDAY;
+
+    fun serialize(serializer: Serializer) {
+        serializer.increase_container_depth()
+        serializer.serialize_variant_index(ordinal)
+        serializer.decrease_container_depth()
+    }
+
+    fun bincodeSerialize(): ByteArray {
+        val serializer = BincodeSerializer()
+        serialize(serializer)
+        return serializer.get_bytes()
+    }
+
+    companion object {
+        @Throws(DeserializationError::class)
+        fun deserialize(deserializer: Deserializer): WeekDay {
+            deserializer.increase_container_depth()
+            val index = deserializer.deserialize_variant_index()
+            deserializer.decrease_container_depth()
+            return when (index) {
+                0 -> SUNDAY
+                1 -> MONDAY
+                else -> throw DeserializationError("Unknown variant index for WeekDay: $index")
+            }
+        }
+
+        @Throws(DeserializationError::class)
+        fun bincodeDeserialize(input: ByteArray?): WeekDay {
             if (input == null) {
                 throw DeserializationError("Cannot deserialize null array")
             }

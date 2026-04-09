@@ -53,6 +53,8 @@ async fn execute_query(
     state: &ApplicationState,
     op: QueryRequest,
 ) -> Result<QueryResponse, anyhow::Error> {
+    tracing::info!("processing query: {op:#?}");
+
     let response = match op {
         QueryRequest::List => QueryResponse::Trackables(
             logic::list(&state.db_pool, 0)
@@ -70,6 +72,16 @@ async fn execute_query(
             logic::details(&state.db_pool, id)
                 .await
                 .context("getting details of multi trackable")?,
+        ),
+        QueryRequest::Settings => QueryResponse::Settings(
+            logic::application_settings(&state.db_pool)
+                .await
+                .context("retrieving application settings")?,
+        ),
+        QueryRequest::UpdateSettings(settings) => QueryResponse::Settings(
+            logic::update_application_settings(&state.db_pool, settings)
+                .await
+                .context("updating application settings")?,
         ),
     };
 

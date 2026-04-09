@@ -1,4 +1,4 @@
-use crate::logic::{TrackableModel, TrackableWithChildrenModel};
+use crate::logic::{ApplicationSettings, TrackableModel, TrackableWithChildrenModel};
 
 use super::*;
 
@@ -10,6 +10,7 @@ pub enum QueryResponse {
     Trackables(Vec<TrackableModel>),
     Clicked(u32),
     Details(TrackableWithChildrenModel),
+    Settings(ApplicationSettings),
 }
 
 #[derive(Facet, Serialize, Deserialize, Clone, Debug)]

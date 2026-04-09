@@ -1,3 +1,5 @@
+use crate::logic::ApplicationSettings;
+
 use super::*;
 
 #[effect(facet_typegen)]
@@ -24,4 +26,6 @@ pub enum QueryRequest {
     List,
     Clicked(u32),
     Details(u32),
+    Settings,
+    UpdateSettings(ApplicationSettings),
 }

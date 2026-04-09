@@ -1,4 +1,4 @@
-use crate::logic::{TrackableModel, TrackableWithChildrenModel};
+use crate::logic::{ApplicationSettings, TrackableModel, TrackableWithChildrenModel};
 
 use super::*;
 
@@ -9,11 +9,11 @@ pub struct ErrorModel {
 }
 
 #[derive(Facet, Serialize, Deserialize, Clone)]
-#[repr(C)]
 pub struct ViewModel {
     pub error: Option<ErrorModel>,
     pub details: Option<TrackableWithChildrenModel>,
     pub trackables: Vec<TrackableModel>,
+    pub settings: ApplicationSettings,
 }
 
 impl ViewModel {
@@ -25,6 +25,7 @@ impl ViewModel {
             }),
             details: None,
             trackables: Vec::new(),
+            settings: Default::default(),
         }
     }
 }

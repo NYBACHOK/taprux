@@ -50,28 +50,30 @@ impl App for Application {
                         }
                     }
                     QueryResponse::Details(detailed) => model.details = Some(detailed),
+                    QueryResponse::Settings(settings) => model.settings = settings,
                 }
                 render()
             }
         }
     }
 
-    fn view(
-        &self,
-        Model {
+    fn view(&self, model: &Model) -> ViewModel {
+        let Model {
             error,
             details,
             list,
-        }: &Model,
-    ) -> ViewModel {
+            settings,
+        } = model.to_owned();
+
         if let Some(error) = error {
-            return ViewModel::error(error);
+            return ViewModel::error(&error);
         }
 
         ViewModel {
             error: None,
             details: details.to_owned(),
-            trackables: list.values().cloned().collect(),
+            trackables: list.into_values().collect(),
+            settings,
         }
     }
 }

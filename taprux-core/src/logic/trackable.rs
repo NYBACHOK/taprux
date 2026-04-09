@@ -116,3 +116,4 @@ pub async fn details(
 
     Ok(event.try_into()?)
 }
+
