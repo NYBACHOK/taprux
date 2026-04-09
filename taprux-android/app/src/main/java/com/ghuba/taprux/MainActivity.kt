@@ -4,38 +4,37 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.ghuba.taprux.core.Event
 import com.ghuba.taprux.core.QueryRequest
 import com.ghuba.taprux.ui.pages.insights.InsightsPage
 import com.ghuba.taprux.ui.pages.library.LibraryPage
 import com.ghuba.taprux.ui.pages.settings.SettingsScreen
 import com.ghuba.taprux.ui.pages.track.TrackPage
-import com.ghuba.taprux.ui.theme.TapruxTheme
 
 enum class AppPage {
   Library,
@@ -45,20 +44,22 @@ enum class AppPage {
 }
 
 class MainActivity : ComponentActivity() {
-  private val core = Core()
-
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     createInsets(findViewById<View>(android.R.id.content).rootView)
+
+    val core = (application as Taprux).core
+
     setContent {
-      TapruxTheme {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-          View(core)
-        }
-      }
+      //      TapruxTheme {
+      View(core)
+      //      }
     }
 
-    core.update(Event.Query(QueryRequest.List))
+    if (savedInstanceState == null) {
+      // Only runs on first creation, not on color mode changes
+      core.update(Event.Query(QueryRequest.List))
+    }
   }
 }
 
@@ -91,7 +92,16 @@ fun View(core: Core) {
     Box(modifier = Modifier.weight(1f)) {
       when (activePage.value) {
         AppPage.Library -> LibraryPage()
-        AppPage.Track -> TrackPage(trackables = viewState.trackables)
+        AppPage.Track ->
+            TrackPage(
+                trackables = viewState.trackables,
+                todayCounts = mapOf(1 to 1),
+                showNames = viewState.settings.showTrackableNames,
+                hasAccess = viewState.settings.hasAccess,
+                onIncrement = {},
+                onDecrement = {},
+                onNavigateToDetails = {},
+            )
         AppPage.Insights -> InsightsPage()
         AppPage.Settings ->
             SettingsScreen(
@@ -115,33 +125,32 @@ fun View(core: Core) {
 
 @Composable
 fun TabBar(activePage: AppPage, onPageSelected: (AppPage) -> Unit) {
-  Row(
-      modifier =
-          Modifier.fillMaxWidth().height(120.dp).background(MaterialTheme.colorScheme.surface),
-      horizontalArrangement = Arrangement.SpaceEvenly,
-      verticalAlignment = Alignment.CenterVertically,
+  NavigationBar(
+      containerColor = MaterialTheme.colorScheme.surface,
+      contentColor = MaterialTheme.colorScheme.onSurface,
+      tonalElevation = 8.dp,
   ) {
     TabItem(
         page = AppPage.Library,
-        iconRes = R.drawable.ic_library,
+        icon = Icons.AutoMirrored.Filled.LibraryBooks,
         isActive = activePage == AppPage.Library,
         onSelect = onPageSelected,
     )
     TabItem(
         page = AppPage.Track,
-        iconRes = R.drawable.ic_track,
+        icon = Icons.Default.CheckCircle,
         isActive = activePage == AppPage.Track,
         onSelect = onPageSelected,
     )
     TabItem(
         page = AppPage.Insights,
-        iconRes = R.drawable.ic_insights,
+        icon = Icons.Default.BarChart,
         isActive = activePage == AppPage.Insights,
         onSelect = onPageSelected,
     )
     TabItem(
         page = AppPage.Settings,
-        iconRes = R.drawable.ic_settings,
+        icon = Icons.Default.Settings,
         isActive = activePage == AppPage.Settings,
         onSelect = onPageSelected,
     )
@@ -149,15 +158,23 @@ fun TabBar(activePage: AppPage, onPageSelected: (AppPage) -> Unit) {
 }
 
 @Composable
-fun TabItem(page: AppPage, iconRes: Int, isActive: Boolean, onSelect: (AppPage) -> Unit) {
-  Box(
-      modifier = Modifier.size(48.dp).clickable { onSelect(page) },
-      contentAlignment = Alignment.Center,
-  ) {
-    AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current).data(iconRes).build(),
-        contentDescription = page.name,
-        modifier = Modifier.size(24.dp),
-    )
-  }
+fun RowScope.TabItem(
+    page: AppPage,
+    icon: ImageVector,
+    isActive: Boolean,
+    onSelect: (AppPage) -> Unit,
+) {
+  NavigationBarItem(
+      selected = isActive,
+      onClick = { onSelect(page) },
+      icon = { Icon(imageVector = icon, contentDescription = page.name) },
+      label = { Text(text = page.name, style = MaterialTheme.typography.labelMedium) },
+      colors =
+          NavigationBarItemDefaults.colors(
+              selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+              indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+              unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+              unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+          ),
+  )
 }
