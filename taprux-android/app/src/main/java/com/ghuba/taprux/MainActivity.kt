@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
@@ -44,11 +45,11 @@ enum class AppPage {
 }
 
 class MainActivity : ComponentActivity() {
+  private val core: Core by viewModels()
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     createInsets(findViewById<View>(android.R.id.content).rootView)
-
-    val core = (application as Taprux).core
 
     setContent {
       //      TapruxTheme {
