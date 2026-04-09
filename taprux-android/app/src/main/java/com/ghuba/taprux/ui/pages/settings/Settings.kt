@@ -21,6 +21,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -109,8 +110,17 @@ fun SettingsScreen(
                 value = state.weekStartDay.name,
                 onValueChange = {},
                 readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                trailingIcon = {
+                  ExposedDropdownMenuDefaults.TrailingIcon(
+                      expanded = expanded,
+                  )
+                },
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .menuAnchor(
+                            type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                            enabled = true,
+                        ),
                 shape = RoundedCornerShape(8.dp),
             )
             ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
