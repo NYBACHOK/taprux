@@ -20,7 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -171,19 +170,20 @@ fun TrackableItem(trackable: TrackableModel, onEdit: () -> Unit, onDelete: () ->
 
       // Actions
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        IconButton(
-            onClick = onEdit,
-            modifier =
-                Modifier.size(36.dp)
-                    .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)),
-        ) {
-          Icon(
-              Icons.Default.Edit,
-              contentDescription = "Edit",
-              modifier = Modifier.size(18.dp),
-              tint = MaterialTheme.colorScheme.primary,
-          )
-        }
+        //        IconButton(
+        //            onClick = onEdit,
+        //            modifier =
+        //                Modifier.size(36.dp)
+        //                    .border(1.dp, MaterialTheme.colorScheme.primary,
+        // RoundedCornerShape(4.dp)),
+        //        ) {
+        //          Icon(
+        //              Icons.Default.Edit,
+        //              contentDescription = "Edit",
+        //              modifier = Modifier.size(18.dp),
+        //              tint = MaterialTheme.colorScheme.primary,
+        //          )
+        //        }
 
         IconButton(
             onClick = onDelete,

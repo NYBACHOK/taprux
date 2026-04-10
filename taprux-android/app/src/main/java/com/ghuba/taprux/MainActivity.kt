@@ -1,6 +1,5 @@
 package com.ghuba.taprux
 
-import android.R
 import android.os.Bundle
 import android.view.View
 import androidx.activity.ComponentActivity
@@ -8,39 +7,34 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.LibraryBooks
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.ghuba.taprux.core.Event
 import com.ghuba.taprux.core.QueryRequest
-import com.ghuba.taprux.ui.pages.edit.LibraryPage
+import com.ghuba.taprux.ui.components.TabItem
+import com.ghuba.taprux.ui.pages.edit.EditPage
 import com.ghuba.taprux.ui.pages.insights.InsightsPage
 import com.ghuba.taprux.ui.pages.settings.SettingsScreen
 import com.ghuba.taprux.ui.pages.track.TrackPage
 import com.ghuba.taprux.ui.theme.TapruxTheme
 
 enum class AppPage {
-  Library,
+  Edit,
   Track,
   Insights,
   Settings,
@@ -51,7 +45,7 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    createInsets(findViewById<View>(R.id.content).rootView)
+    createInsets(findViewById<View>(android.R.id.content).rootView)
 
     setContent { TapruxTheme(dynamicColor = false) { View(core) } }
 
@@ -83,14 +77,14 @@ fun View(core: Core) {
   Column(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.weight(1f)) {
       when (activePage.value) {
-        AppPage.Library -> LibraryPage()
+        AppPage.Edit -> EditPage(trackables = viewState.trackables)
         AppPage.Track ->
             TrackPage(
                 trackables = viewState.trackables,
-                todayCounts = mapOf(1 to 1),
+                todayCounts = mapOf(),
                 showNames = viewState.settings.showTrackableNames,
                 hasAccess = viewState.settings.hasAccess,
-                onIncrement = {},
+                onIncrement = { core.update(Event.Query(QueryRequest.Clicked(it.toUInt()))) },
                 onDecrement = {},
                 onNavigateToDetails = {},
             )
@@ -123,9 +117,9 @@ fun TabBar(activePage: AppPage, onPageSelected: (AppPage) -> Unit) {
       tonalElevation = 8.dp,
   ) {
     TabItem(
-        page = AppPage.Library,
-        icon = Icons.AutoMirrored.Filled.LibraryBooks,
-        isActive = activePage == AppPage.Library,
+        page = AppPage.Edit,
+        icon = Icons.Default.Add,
+        isActive = activePage == AppPage.Edit,
         onSelect = onPageSelected,
     )
     TabItem(
@@ -147,26 +141,4 @@ fun TabBar(activePage: AppPage, onPageSelected: (AppPage) -> Unit) {
         onSelect = onPageSelected,
     )
   }
-}
-
-@Composable
-fun RowScope.TabItem(
-    page: AppPage,
-    icon: ImageVector,
-    isActive: Boolean,
-    onSelect: (AppPage) -> Unit,
-) {
-  NavigationBarItem(
-      selected = isActive,
-      onClick = { onSelect(page) },
-      icon = { Icon(imageVector = icon, contentDescription = page.name) },
-      label = { Text(text = page.name, style = MaterialTheme.typography.labelMedium) },
-      colors =
-          NavigationBarItemDefaults.colors(
-              selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-              indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-              unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-              unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-          ),
-  )
 }
