@@ -61,7 +61,7 @@ fun TrackPage(
   val pages = trackables.chunked(itemsPerPage)
   val pagerState = rememberPagerState(pageCount = { pages.size })
 
-  Box(modifier = Modifier.fillMaxSize()) {
+  Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
     if (trackables.isEmpty()) {
       Text(
           "No trackables yet. Add your first one!",
@@ -163,7 +163,10 @@ fun TrackableGridItem(
           horizontalAlignment = Alignment.CenterHorizontally,
           modifier = Modifier.fillMaxSize(),
       ) {
-        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.weight(1f).background(Color(0xFFBBDEFB)),
+            contentAlignment = Alignment.Center,
+        ) {
           val context = LocalContext.current
           val svgData = remember(trackable.svgIcon) { trackable.svgIcon.toByteArray() }
 
@@ -183,7 +186,7 @@ fun TrackableGridItem(
           Text(
               text = trackable.name,
               style = MaterialTheme.typography.labelSmall,
-              fontSize = 9.sp,
+              fontSize = 12.sp,
               color = Color.White,
               textAlign = TextAlign.Center,
               maxLines = 1,

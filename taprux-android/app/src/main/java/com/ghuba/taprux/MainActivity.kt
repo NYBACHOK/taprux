@@ -1,5 +1,6 @@
 package com.ghuba.taprux
 
+import android.R
 import android.os.Bundle
 import android.view.View
 import androidx.activity.ComponentActivity
@@ -32,10 +33,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.ghuba.taprux.core.Event
 import com.ghuba.taprux.core.QueryRequest
-import com.ghuba.taprux.ui.pages.insights.InsightsPage
 import com.ghuba.taprux.ui.pages.edit.LibraryPage
+import com.ghuba.taprux.ui.pages.insights.InsightsPage
 import com.ghuba.taprux.ui.pages.settings.SettingsScreen
 import com.ghuba.taprux.ui.pages.track.TrackPage
+import com.ghuba.taprux.ui.theme.TapruxTheme
 
 enum class AppPage {
   Library,
@@ -49,13 +51,9 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    createInsets(findViewById<View>(android.R.id.content).rootView)
+    createInsets(findViewById<View>(R.id.content).rootView)
 
-    setContent {
-      //      TapruxTheme {
-      View(core)
-      //      }
-    }
+    setContent { TapruxTheme(dynamicColor = false) { View(core) } }
 
     if (savedInstanceState == null) {
       // Only runs on first creation, not on color mode changes
@@ -68,19 +66,12 @@ fun createInsets(view: View?) {
   if (view == null) return
 
   ViewCompat.setOnApplyWindowInsetsListener(view) { v, windowInsets ->
-    val imeVisible = windowInsets.isVisible(WindowInsetsCompat.Type.ime())
-    val bottomInsets =
-        if (imeVisible) {
-          windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-        } else {
-          windowInsets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
-        }
+    val types = WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime()
+    val insets = windowInsets.getInsets(types)
 
-    val systemBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+    v.setPadding(0, insets.top, 0, insets.bottom)
 
-    v.setPadding(0, systemBarsInsets.top, 0, bottomInsets)
-
-    windowInsets
+    WindowInsetsCompat.CONSUMED
   }
 }
 
