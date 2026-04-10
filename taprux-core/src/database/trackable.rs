@@ -26,8 +26,8 @@ pub struct RawTrackableWithChildren {
     pub sub_events: Vec<RawTrackable>,
 }
 
-/// Lists all events with their occurrence count for today
-pub async fn events(
+/// Lists all trackables with their occurrence count for today
+pub async fn trackable(
     mut e: impl AsMut<SqliteConnection>,
     offset: u32,
     limit: u32,
@@ -50,7 +50,7 @@ pub async fn events(
 }
 
 /// Records a new occurrence of an event
-pub async fn event_occurrence_create(
+pub async fn trackable_occurrence_create(
     mut e: impl AsMut<SqliteConnection>,
     trackable_id: u32,
 ) -> Result<(), sqlx::Error> {
@@ -64,7 +64,7 @@ pub async fn event_occurrence_create(
 }
 
 /// Fetches a specific event and all its direct children
-pub async fn event_with_children(
+pub async fn trackable_with_children(
     mut e: impl AsMut<SqliteConnection>,
     trackable_id: u32,
 ) -> Result<RawTrackableWithChildren, sqlx::Error> {

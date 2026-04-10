@@ -4,7 +4,6 @@ CREATE TABLE trackables (
     svg_icon TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     edited_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    user_enabled BOOLEAN NOT NULL DEFAULT true,
 
     parent_id INTEGER NULL,
     FOREIGN KEY(parent_id) REFERENCES trackables(id)
@@ -15,5 +14,16 @@ CREATE TABLE trackable_occurs (
     trackable_id INTEGER NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 
+    FOREIGN KEY(trackable_id) REFERENCES trackables(id)
+);
+
+CREATE TABLE user_trackables (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_key INTEGER NOT NULL UNIQUE,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    edited_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    trackable_id INTEGER NULL,
     FOREIGN KEY(trackable_id) REFERENCES trackables(id)
 );

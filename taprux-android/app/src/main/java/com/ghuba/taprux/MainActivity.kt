@@ -33,7 +33,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.ghuba.taprux.core.Event
 import com.ghuba.taprux.core.QueryRequest
 import com.ghuba.taprux.ui.pages.insights.InsightsPage
-import com.ghuba.taprux.ui.pages.library.LibraryPage
+import com.ghuba.taprux.ui.pages.edit.LibraryPage
 import com.ghuba.taprux.ui.pages.settings.SettingsScreen
 import com.ghuba.taprux.ui.pages.track.TrackPage
 

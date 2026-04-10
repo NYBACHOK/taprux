@@ -1,4 +1,4 @@
-package com.ghuba.taprux.ui.pages.track
+package com.ghuba.taprux.ui.pages.edit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
@@ -89,7 +90,7 @@ fun ManageTrackablesPage(
         Text(
             text = "No trackables yet. Add your first one to get started!",
             modifier = Modifier.align(Alignment.Center).padding(32.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
       } else {

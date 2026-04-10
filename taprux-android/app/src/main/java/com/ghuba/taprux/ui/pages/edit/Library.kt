@@ -1,4 +1,4 @@
-package com.ghuba.taprux.ui.pages.library
+package com.ghuba.taprux.ui.pages.edit
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
