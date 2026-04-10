@@ -36,7 +36,6 @@ impl TryFrom<RawTrackable> for TrackableModel {
             svg_icon,
             event_occurrence,
             sub_events_count,
-            user_enabled: _,
             created_at: _,
             edited_at: _,
         }: RawTrackable,

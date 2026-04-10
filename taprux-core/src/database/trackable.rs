@@ -9,7 +9,6 @@ pub struct RawTrackable {
     pub svg_icon: String,
     pub created_at: OffsetDateTime,
     pub edited_at: OffsetDateTime,
-    pub user_enabled: bool,
     pub event_occurrence: i32,
     pub sub_events_count: i32,
 }
@@ -21,7 +20,6 @@ pub struct RawTrackableWithChildren {
     pub svg_icon: String,
     pub created_at: OffsetDateTime,
     pub edited_at: OffsetDateTime,
-    pub user_enabled: bool,
     pub event_occurrence: i32,
     pub sub_events: Vec<RawTrackable>,
 }
@@ -35,7 +33,7 @@ pub async fn trackable(
     sqlx::query_as::<_, RawTrackable>(
         r#"
         SELECT 
-            e.id, e.name, e.svg_icon, e.created_at, e.edited_at, e.user_enabled,
+            e.id, e.name, e.svg_icon, e.created_at, e.edited_at,
             (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
             (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
         FROM trackables e
@@ -68,10 +66,10 @@ pub async fn trackable_with_children(
     mut e: impl AsMut<SqliteConnection>,
     trackable_id: u32,
 ) -> Result<RawTrackableWithChildren, sqlx::Error> {
-    let RawTrackable { id, name, svg_icon, created_at, edited_at, user_enabled, event_occurrence, sub_events_count : _ } = sqlx::query_as::<_, RawTrackable>(
+    let RawTrackable { id, name, svg_icon, created_at, edited_at, event_occurrence, sub_events_count : _ } = sqlx::query_as::<_, RawTrackable>(
         r#"
         SELECT 
-            e.id, e.name, e.svg_icon, e.created_at, e.edited_at, e.user_enabled,
+            e.id, e.name, e.svg_icon, e.created_at, e.edited_at,
             (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
             (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
         FROM trackables e
@@ -100,7 +98,6 @@ pub async fn trackable_with_children(
         svg_icon,
         created_at,
         edited_at,
-        user_enabled,
         event_occurrence,
         sub_events,
     };
