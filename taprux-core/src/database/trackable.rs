@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqliteConnection;
 use time::OffsetDateTime;
@@ -9,7 +11,6 @@ pub struct RawTrackable {
     pub svg_icon: String,
     pub created_at: OffsetDateTime,
     pub edited_at: OffsetDateTime,
-    pub event_occurrence: i32,
     pub sub_events_count: i32,
 }
 
@@ -20,11 +21,10 @@ pub struct RawTrackableWithChildren {
     pub svg_icon: String,
     pub created_at: OffsetDateTime,
     pub edited_at: OffsetDateTime,
-    pub event_occurrence: i32,
     pub sub_events: Vec<RawTrackable>,
 }
 
-/// Lists all trackables with their occurrence count for today
+/// Lists all trackables
 pub async fn trackable(
     mut e: impl AsMut<SqliteConnection>,
     offset: u32,
@@ -34,7 +34,6 @@ pub async fn trackable(
         r#"
         SELECT 
             e.id, e.name, e.svg_icon, e.created_at, e.edited_at,
-            (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
             (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
         FROM trackables e
         WHERE e.parent_id IS NULL
@@ -45,6 +44,59 @@ pub async fn trackable(
     .bind(offset)
     .fetch_all(e.as_mut())
     .await
+}
+
+pub async fn user_trackables(
+    mut e: impl AsMut<SqliteConnection>,
+) -> Result<Vec<RawTrackable>, sqlx::Error> {
+    sqlx::query_as::<_, RawTrackable>(
+        r#"
+        SELECT 
+            e.id, e.name, e.svg_icon, u.created_at, u.edited_at,
+            (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
+        FROM trackables e
+        JOIN user_trackables u ON u.trackable_id = e.id
+        WHERE e.parent_id IS NULL
+        ORDER BY "#,
+    )
+    .fetch_all(e.as_mut())
+    .await
+}
+
+pub async fn user_trackables_add(
+    mut e: impl AsMut<SqliteConnection>,
+    trackable_id: u32,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("INSERT INTO user_trackables (trackable_id) VALUES ($1);")
+        .bind(trackable_id)
+        .bind(OffsetDateTime::now_utc())
+        .execute(e.as_mut())
+        .await?;
+
+    Ok(())
+}
+
+pub async fn trackable_occurrences(
+    mut e: impl AsMut<SqliteConnection>,
+) -> Result<HashMap<i32, i32>, sqlx::Error> {
+    #[derive(sqlx::FromRow)]
+    struct Raw {
+        id: i32,
+        count: i32,
+    }
+
+    let occurrences = sqlx::query_as::<_, Raw>(
+        r#"
+        SELECT 
+            e.id, (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS count,
+        FROM trackables e"#,
+    )
+    .fetch_all(e.as_mut())
+    .await?
+    .into_iter().map( | this | (this.id, this.count))
+    .collect();
+
+    Ok(occurrences)
 }
 
 /// Records a new occurrence of an event
@@ -61,16 +113,36 @@ pub async fn trackable_occurrence_create(
     Ok(())
 }
 
+pub async fn trackable_occurrence_delete(
+    mut e: impl AsMut<SqliteConnection>,
+    id: u32,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "DELETE FROM trackable_occurs t WHERE t.trackable_id = $1 ORDER BY timestamp DESC LIMIT 1;",
+    )
+    .bind(id)
+    .execute(e.as_mut())
+    .await?;
+
+    Ok(())
+}
+
 /// Fetches a specific event and all its direct children
 pub async fn trackable_with_children(
     mut e: impl AsMut<SqliteConnection>,
     trackable_id: u32,
 ) -> Result<RawTrackableWithChildren, sqlx::Error> {
-    let RawTrackable { id, name, svg_icon, created_at, edited_at, event_occurrence, sub_events_count : _ } = sqlx::query_as::<_, RawTrackable>(
+    let RawTrackable {
+        id,
+        name,
+        svg_icon,
+        created_at,
+        edited_at,
+        sub_events_count: _,
+    } = sqlx::query_as::<_, RawTrackable>(
         r#"
         SELECT 
             e.id, e.name, e.svg_icon, e.created_at, e.edited_at,
-            (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
             (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
         FROM trackables e
         WHERE e.parent_id IS NULL AND e.id = $1;
@@ -98,7 +170,6 @@ pub async fn trackable_with_children(
         svg_icon,
         created_at,
         edited_at,
-        event_occurrence,
         sub_events,
     };
 

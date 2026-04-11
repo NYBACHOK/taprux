@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::logic::{ApplicationSettings, TrackableModel, TrackableWithChildrenModel};
 
 use super::*;
@@ -13,6 +15,7 @@ pub struct ViewModel {
     pub error: Option<ErrorModel>,
     pub details: Option<TrackableWithChildrenModel>,
     pub trackables: Vec<TrackableModel>,
+    pub occurrences : HashMap<u32, u32>,
     pub settings: ApplicationSettings,
 }
 
@@ -26,6 +29,7 @@ impl ViewModel {
             details: None,
             trackables: Vec::new(),
             settings: Default::default(),
+            occurrences: Default::default(),
         }
     }
 }

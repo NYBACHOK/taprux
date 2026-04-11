@@ -56,17 +56,42 @@ async fn execute_query(
     tracing::info!("processing query: {op:#?}");
 
     let response = match op {
-        QueryRequest::List => QueryResponse::Trackables(
+        QueryRequest::AllTrackables => QueryResponse::List(
             logic::list(&state.db_pool, 0)
                 .await
                 .context("retrieving list of trackables")?,
         ),
-        QueryRequest::Clicked(id) => {
+        QueryRequest::UserTrackables => QueryResponse::List(
+            logic::user_list(&state.db_pool)
+                .await
+                .context("retrieving list of user trackables")?,
+        ),
+        QueryRequest::AddOccurrence(id) => {
             logic::clicked(&state.db_pool, id)
                 .await
                 .context("adding new trackable occurence")?;
 
             QueryResponse::Clicked(id)
+        }
+        QueryRequest::DeleteOccurrence(id) => {
+            logic::occurrence_delete(&state.db_pool, id)
+                .await
+                .context("deletion of trackable occurrence")?;
+
+            QueryResponse::DeletedOccurrence(id)
+        }
+
+        QueryRequest::Occurrences => {
+            let occurrences = logic::occurrences(&state.db_pool)
+                .await
+                .context("retrieval of trackable occurrence")?;
+
+            QueryResponse::Occurrences(occurrences)
+        }
+        QueryRequest::AddUserTrackable(id) => {
+            logic::user_trackables_add(&state.db_pool, id).await?;
+
+            QueryResponse::AddedUserTrackable
         }
         QueryRequest::Details(id) => QueryResponse::Details(
             logic::details(&state.db_pool, id)

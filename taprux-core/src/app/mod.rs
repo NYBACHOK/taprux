@@ -27,6 +27,10 @@ impl App for Application {
 
     fn update(&self, event: Event, model: &mut Model) -> Command<Effect, Event> {
         match event {
+            Event::Initialize => Command::all([
+                Command::event(Event::Query(QueryRequest::UserTrackables)),
+                Command::event(Event::Query(QueryRequest::Occurrences)),
+            ]),
             Event::Error(error) => {
                 model.error = Some(error);
                 render()
@@ -41,16 +45,25 @@ impl App for Application {
             Event::QueryResponse(query_response) => {
                 match query_response {
                     QueryResponse::None => (),
-                    QueryResponse::Trackables(list) => {
+                    QueryResponse::List(list) => {
                         model.list = list.into_iter().map(|this| (this.id, this)).collect()
                     }
                     QueryResponse::Clicked(id) => {
-                        if let Some(item) = model.list.get_mut(&id) {
-                            item.event_occurrence += 1;
+                        if let Some(item) = model.occurrences.get_mut(&id) {
+                            *item += 1;
                         }
                     }
                     QueryResponse::Details(detailed) => model.details = Some(detailed),
                     QueryResponse::Settings(settings) => model.settings = settings,
+                    QueryResponse::DeletedOccurrence(id) => {
+                        if let Some(item) = model.occurrences.get_mut(&id) {
+                            *item = item.checked_sub(1).unwrap_or_default();
+                        }
+                    }
+                    QueryResponse::AddedUserTrackable => {
+                        return Command::notify_shell(AppliedChanges::UserTrackable).build();
+                    }
+                    QueryResponse::Occurrences(occurrences) => model.occurrences = occurrences,
                 }
                 render()
             }
@@ -63,6 +76,7 @@ impl App for Application {
             details,
             list,
             settings,
+            occurrences,
         } = model.to_owned();
 
         if let Some(error) = error {
@@ -74,6 +88,7 @@ impl App for Application {
             details: details.to_owned(),
             trackables: list.into_values().collect(),
             settings,
+            occurrences,
         }
     }
 }
