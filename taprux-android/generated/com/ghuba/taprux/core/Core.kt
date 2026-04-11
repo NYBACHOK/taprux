@@ -25,6 +25,26 @@ fun <T> Deserializer.deserializeListOf(deserializeElement: (Deserializer) -> T):
     return list
 }
 
+fun <K, V> Map<K, V>.serialize(
+    serializer: Serializer,
+    serializeEntry: Serializer.(K, V) -> Unit,
+) {
+    serializer.serialize_len(size.toLong())
+    forEach { (key, value) ->
+        serializer.serializeEntry(key, value)
+    }
+}
+
+fun <K, V> Deserializer.deserializeMapOf(deserializeEntry: (Deserializer) -> Pair<K, V>): Map<K, V> {
+    val length = deserialize_len()
+    val map = mutableMapOf<K, V>()
+    repeat(length.toInt()) {
+        val (key, value) = deserializeEntry(this)
+        map[key] = value
+    }
+    return map
+}
+
 fun <T> T?.serializeOptionOf(
     serializer: Serializer,
     serializeElement: Serializer.(T) -> Unit,
@@ -119,6 +139,48 @@ data class ApplicationSettings(
     }
 }
 
+enum class AppliedChanges {
+    USERTRACKABLE;
+
+    fun serialize(serializer: Serializer) {
+        serializer.increase_container_depth()
+        serializer.serialize_variant_index(ordinal)
+        serializer.decrease_container_depth()
+    }
+
+    fun bincodeSerialize(): ByteArray {
+        val serializer = BincodeSerializer()
+        serialize(serializer)
+        return serializer.get_bytes()
+    }
+
+    companion object {
+        @Throws(DeserializationError::class)
+        fun deserialize(deserializer: Deserializer): AppliedChanges {
+            deserializer.increase_container_depth()
+            val index = deserializer.deserialize_variant_index()
+            deserializer.decrease_container_depth()
+            return when (index) {
+                0 -> USERTRACKABLE
+                else -> throw DeserializationError("Unknown variant index for AppliedChanges: $index")
+            }
+        }
+
+        @Throws(DeserializationError::class)
+        fun bincodeDeserialize(input: ByteArray?): AppliedChanges {
+            if (input == null) {
+                throw DeserializationError("Cannot deserialize null array")
+            }
+            val deserializer = BincodeDeserializer(input)
+            val value = deserialize(deserializer)
+            if (deserializer.get_buffer_offset() < input.size) {
+                throw DeserializationError("Some input bytes were not read")
+            }
+            return value
+        }
+    }
+}
+
 sealed interface Effect {
     fun serialize(serializer: Serializer)
 
@@ -148,12 +210,32 @@ sealed interface Effect {
         }
     }
 
+    data class Changes(
+        val value: com.ghuba.taprux.core.AppliedChanges,
+    ) : Effect {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(1)
+            value.serialize(serializer)
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): Changes {
+                deserializer.increase_container_depth()
+                val value = com.ghuba.taprux.core.AppliedChanges.deserialize(deserializer)
+                deserializer.decrease_container_depth()
+                return Changes(value)
+            }
+        }
+    }
+
     data class Query(
         val value: com.ghuba.taprux.core.QueryRequest,
     ) : Effect {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(1)
+            serializer.serialize_variant_index(2)
             value.serialize(serializer)
             serializer.decrease_container_depth()
         }
@@ -174,7 +256,8 @@ sealed interface Effect {
             val index = deserializer.deserialize_variant_index()
             return when (index) {
                 0 -> Render.deserialize(deserializer)
-                1 -> Query.deserialize(deserializer)
+                1 -> Changes.deserialize(deserializer)
+                2 -> Query.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for Effect: $index")
             }
         }
@@ -244,12 +327,25 @@ sealed interface Event {
         return serializer.get_bytes()
     }
 
+    /// Load all resources on first load
+    data object Initialize: Event {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(0)
+            serializer.decrease_container_depth()
+        }
+
+        fun deserialize(deserializer: Deserializer): Initialize {
+            return Initialize
+        }
+    }
+
     data class Query(
         val value: com.ghuba.taprux.core.QueryRequest,
     ) : Event {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(0)
+            serializer.serialize_variant_index(1)
             value.serialize(serializer)
             serializer.decrease_container_depth()
         }
@@ -269,7 +365,8 @@ sealed interface Event {
         fun deserialize(deserializer: Deserializer): Event {
             val index = deserializer.deserialize_variant_index()
             return when (index) {
-                0 -> Query.deserialize(deserializer)
+                0 -> Initialize.deserialize(deserializer)
+                1 -> Query.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for Event: $index")
             }
         }
@@ -298,35 +395,99 @@ sealed interface QueryRequest {
         return serializer.get_bytes()
     }
 
-    data object List: QueryRequest {
+    data object AllTrackables: QueryRequest {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
             serializer.serialize_variant_index(0)
             serializer.decrease_container_depth()
         }
 
-        fun deserialize(deserializer: Deserializer): List {
-            return List
+        fun deserialize(deserializer: Deserializer): AllTrackables {
+            return AllTrackables
         }
     }
 
-    data class Clicked(
+    data object UserTrackables: QueryRequest {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(1)
+            serializer.decrease_container_depth()
+        }
+
+        fun deserialize(deserializer: Deserializer): UserTrackables {
+            return UserTrackables
+        }
+    }
+
+    data class AddUserTrackable(
         val value: UInt,
     ) : QueryRequest {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(1)
+            serializer.serialize_variant_index(2)
             serializer.serialize_u32(value)
             serializer.decrease_container_depth()
         }
 
         companion object {
-            fun deserialize(deserializer: Deserializer): Clicked {
+            fun deserialize(deserializer: Deserializer): AddUserTrackable {
                 deserializer.increase_container_depth()
                 val value = deserializer.deserialize_u32()
                 deserializer.decrease_container_depth()
-                return Clicked(value)
+                return AddUserTrackable(value)
             }
+        }
+    }
+
+    data class AddOccurrence(
+        val value: UInt,
+    ) : QueryRequest {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(3)
+            serializer.serialize_u32(value)
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): AddOccurrence {
+                deserializer.increase_container_depth()
+                val value = deserializer.deserialize_u32()
+                deserializer.decrease_container_depth()
+                return AddOccurrence(value)
+            }
+        }
+    }
+
+    data class DeleteOccurrence(
+        val value: UInt,
+    ) : QueryRequest {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(4)
+            serializer.serialize_u32(value)
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): DeleteOccurrence {
+                deserializer.increase_container_depth()
+                val value = deserializer.deserialize_u32()
+                deserializer.decrease_container_depth()
+                return DeleteOccurrence(value)
+            }
+        }
+    }
+
+    data object Occurrences: QueryRequest {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(5)
+            serializer.decrease_container_depth()
+        }
+
+        fun deserialize(deserializer: Deserializer): Occurrences {
+            return Occurrences
         }
     }
 
@@ -335,7 +496,7 @@ sealed interface QueryRequest {
     ) : QueryRequest {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(2)
+            serializer.serialize_variant_index(6)
             serializer.serialize_u32(value)
             serializer.decrease_container_depth()
         }
@@ -353,7 +514,7 @@ sealed interface QueryRequest {
     data object Settings: QueryRequest {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(3)
+            serializer.serialize_variant_index(7)
             serializer.decrease_container_depth()
         }
 
@@ -367,7 +528,7 @@ sealed interface QueryRequest {
     ) : QueryRequest {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(4)
+            serializer.serialize_variant_index(8)
             value.serialize(serializer)
             serializer.decrease_container_depth()
         }
@@ -387,11 +548,15 @@ sealed interface QueryRequest {
         fun deserialize(deserializer: Deserializer): QueryRequest {
             val index = deserializer.deserialize_variant_index()
             return when (index) {
-                0 -> List.deserialize(deserializer)
-                1 -> Clicked.deserialize(deserializer)
-                2 -> Details.deserialize(deserializer)
-                3 -> Settings.deserialize(deserializer)
-                4 -> UpdateSettings.deserialize(deserializer)
+                0 -> AllTrackables.deserialize(deserializer)
+                1 -> UserTrackables.deserialize(deserializer)
+                2 -> AddUserTrackable.deserialize(deserializer)
+                3 -> AddOccurrence.deserialize(deserializer)
+                4 -> DeleteOccurrence.deserialize(deserializer)
+                5 -> Occurrences.deserialize(deserializer)
+                6 -> Details.deserialize(deserializer)
+                7 -> Settings.deserialize(deserializer)
+                8 -> UpdateSettings.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for QueryRequest: $index")
             }
         }
@@ -457,12 +622,40 @@ sealed interface QueryResponse {
         }
     }
 
+    data class Occurrences(
+        val value: Map<UInt, UInt>,
+    ) : QueryResponse {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(2)
+            value.serialize(serializer) { key, value ->
+                serializer.serialize_u32(key)
+                serializer.serialize_u32(value)
+            }
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): Occurrences {
+                deserializer.increase_container_depth()
+                val value =
+                    deserializer.deserializeMapOf {
+                        val key = deserializer.deserialize_u32()
+                        val value = deserializer.deserialize_u32()
+                        Pair(key, value)
+                    }
+                deserializer.decrease_container_depth()
+                return Occurrences(value)
+            }
+        }
+    }
+
     data class Clicked(
         val value: UInt,
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(2)
+            serializer.serialize_variant_index(3)
             serializer.serialize_u32(value)
             serializer.decrease_container_depth()
         }
@@ -477,12 +670,44 @@ sealed interface QueryResponse {
         }
     }
 
+    data class DeletedOccurrence(
+        val value: UInt,
+    ) : QueryResponse {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(4)
+            serializer.serialize_u32(value)
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): DeletedOccurrence {
+                deserializer.increase_container_depth()
+                val value = deserializer.deserialize_u32()
+                deserializer.decrease_container_depth()
+                return DeletedOccurrence(value)
+            }
+        }
+    }
+
+    data object AddedUserTrackable: QueryResponse {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(5)
+            serializer.decrease_container_depth()
+        }
+
+        fun deserialize(deserializer: Deserializer): AddedUserTrackable {
+            return AddedUserTrackable
+        }
+    }
+
     data class Details(
         val value: com.ghuba.taprux.core.TrackableWithChildrenModel,
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(3)
+            serializer.serialize_variant_index(6)
             value.serialize(serializer)
             serializer.decrease_container_depth()
         }
@@ -502,7 +727,7 @@ sealed interface QueryResponse {
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(4)
+            serializer.serialize_variant_index(7)
             value.serialize(serializer)
             serializer.decrease_container_depth()
         }
@@ -524,9 +749,12 @@ sealed interface QueryResponse {
             return when (index) {
                 0 -> None.deserialize(deserializer)
                 1 -> Trackables.deserialize(deserializer)
-                2 -> Clicked.deserialize(deserializer)
-                3 -> Details.deserialize(deserializer)
-                4 -> Settings.deserialize(deserializer)
+                2 -> Occurrences.deserialize(deserializer)
+                3 -> Clicked.deserialize(deserializer)
+                4 -> DeletedOccurrence.deserialize(deserializer)
+                5 -> AddedUserTrackable.deserialize(deserializer)
+                6 -> Details.deserialize(deserializer)
+                7 -> Settings.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for QueryResponse: $index")
             }
         }
@@ -697,7 +925,6 @@ data class TrackableModel(
     val id: UInt,
     val name: String,
     val svgIcon: List<UByte>,
-    val eventOccurrence: UInt,
     val hasSubEvents: Boolean,
 ) {
     fun serialize(serializer: Serializer) {
@@ -707,7 +934,6 @@ data class TrackableModel(
         svgIcon.serialize(serializer) {
             serializer.serialize_u8(it)
         }
-        serializer.serialize_u32(eventOccurrence)
         serializer.serialize_bool(hasSubEvents)
         serializer.decrease_container_depth()
     }
@@ -727,10 +953,9 @@ data class TrackableModel(
                 deserializer.deserializeListOf {
                     deserializer.deserialize_u8()
                 }
-            val eventOccurrence = deserializer.deserialize_u32()
             val hasSubEvents = deserializer.deserialize_bool()
             deserializer.decrease_container_depth()
-            return TrackableModel(id, name, svgIcon, eventOccurrence, hasSubEvents)
+            return TrackableModel(id, name, svgIcon, hasSubEvents)
         }
 
         @Throws(DeserializationError::class)
@@ -809,6 +1034,7 @@ data class ViewModel(
     val error: com.ghuba.taprux.core.ErrorModel? = null,
     val details: com.ghuba.taprux.core.TrackableWithChildrenModel? = null,
     val trackables: List<com.ghuba.taprux.core.TrackableModel>,
+    val occurrences: Map<UInt, UInt>,
     val settings: com.ghuba.taprux.core.ApplicationSettings,
 ) {
     fun serialize(serializer: Serializer) {
@@ -821,6 +1047,10 @@ data class ViewModel(
         }
         trackables.serialize(serializer) {
             it.serialize(serializer)
+        }
+        occurrences.serialize(serializer) { key, value ->
+            serializer.serialize_u32(key)
+            serializer.serialize_u32(value)
         }
         settings.serialize(serializer)
         serializer.decrease_container_depth()
@@ -847,9 +1077,15 @@ data class ViewModel(
                 deserializer.deserializeListOf {
                     com.ghuba.taprux.core.TrackableModel.deserialize(deserializer)
                 }
+            val occurrences =
+                deserializer.deserializeMapOf {
+                    val key = deserializer.deserialize_u32()
+                    val value = deserializer.deserialize_u32()
+                    Pair(key, value)
+                }
             val settings = com.ghuba.taprux.core.ApplicationSettings.deserialize(deserializer)
             deserializer.decrease_container_depth()
-            return ViewModel(error, details, trackables, settings)
+            return ViewModel(error, details, trackables, occurrences, settings)
         }
 
         @Throws(DeserializationError::class)

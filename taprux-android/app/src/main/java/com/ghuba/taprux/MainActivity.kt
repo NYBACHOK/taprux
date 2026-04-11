@@ -50,8 +50,8 @@ class MainActivity : ComponentActivity() {
     setContent { TapruxTheme(dynamicColor = false) { View(core) } }
 
     if (savedInstanceState == null) {
-      // Only runs on first creation, not on color mode changes
-      core.update(Event.Query(QueryRequest.List))
+      // Only runs on first creation, not on color mode changes or anything else
+      core.update(Event.Initialize)
     }
   }
 }
@@ -81,10 +81,10 @@ fun View(core: Core) {
         AppPage.Track ->
             TrackPage(
                 trackables = viewState.trackables,
-                todayCounts = mapOf(),
+                todayCounts = viewState.occurrences.map { it.key.toInt() to it.value.toInt() }.toMap(),
                 showNames = viewState.settings.showTrackableNames,
                 hasAccess = viewState.settings.hasAccess,
-                onIncrement = { core.update(Event.Query(QueryRequest.Clicked(it.toUInt()))) },
+                onIncrement = { core.update(Event.Query(QueryRequest.AddOccurrence(it.toUInt()))) },
                 onDecrement = {},
                 onNavigateToDetails = {},
             )

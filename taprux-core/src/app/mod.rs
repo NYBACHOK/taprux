@@ -45,7 +45,7 @@ impl App for Application {
             Event::QueryResponse(query_response) => {
                 match query_response {
                     QueryResponse::None => (),
-                    QueryResponse::List(list) => {
+                    QueryResponse::Trackables(list) => {
                         model.list = list.into_iter().map(|this| (this.id, this)).collect()
                     }
                     QueryResponse::Clicked(id) => {

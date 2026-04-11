@@ -9,7 +9,7 @@ use super::*;
 pub enum QueryResponse {
     #[default]
     None,
-    List(Vec<TrackableModel>),
+    Trackables(Vec<TrackableModel>),
     Occurrences(HashMap<u32, u32>),
     Clicked(u32),
     DeletedOccurrence(u32),

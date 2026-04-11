@@ -57,7 +57,7 @@ pub async fn user_trackables(
         FROM trackables e
         JOIN user_trackables u ON u.trackable_id = e.id
         WHERE e.parent_id IS NULL
-        ORDER BY "#,
+        ORDER BY u.order_key ASC"#,
     )
     .fetch_all(e.as_mut())
     .await
@@ -88,8 +88,9 @@ pub async fn trackable_occurrences(
     let occurrences = sqlx::query_as::<_, Raw>(
         r#"
         SELECT 
-            e.id, (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS count,
-        FROM trackables e"#,
+            e.id, (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS count
+        FROM trackables e
+        JOIN user_trackables u ON u.trackable_id = e.id"#,
     )
     .fetch_all(e.as_mut())
     .await?
