@@ -56,6 +56,8 @@ impl App for Application {
                     QueryResponse::Clicked(id) => {
                         if let Some(item) = model.occurrences.get_mut(&id) {
                             *item += 1;
+                        } else {
+                            model.occurrences.insert(id, 1);
                         }
                     }
                     QueryResponse::Details(detailed) => model.details = Some(detailed),
