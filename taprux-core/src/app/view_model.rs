@@ -14,8 +14,9 @@ pub struct ErrorModel {
 pub struct ViewModel {
     pub error: Option<ErrorModel>,
     pub details: Option<TrackableWithChildrenModel>,
-    pub trackables: Vec<TrackableModel>,
-    pub occurrences : HashMap<u32, u32>,
+    pub all_trackables: Vec<TrackableModel>,
+    pub user_trackables: Vec<TrackableModel>,
+    pub occurrences: HashMap<u32, u32>,
     pub settings: ApplicationSettings,
 }
 
@@ -27,7 +28,8 @@ impl ViewModel {
                 description: error.to_owned(),
             }),
             details: None,
-            trackables: Vec::new(),
+            all_trackables: Vec::new(),
+            user_trackables: Vec::new(),
             settings: Default::default(),
             occurrences: Default::default(),
         }

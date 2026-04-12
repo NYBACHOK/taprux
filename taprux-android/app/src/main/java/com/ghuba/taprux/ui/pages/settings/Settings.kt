@@ -198,12 +198,12 @@ fun SettingsScreen(
             checked = state.notifInsightsReports,
             onCheckedChange = { onSettingsChange(state.copy(notifInsightsReports = it)) },
         )
-        SettingToggle(
-            title = "Health HERstory",
-            subtitle = "Reminder to complete your health background",
-            checked = state.notifHealthHerstory,
-            onCheckedChange = { onSettingsChange(state.copy(notifHealthHerstory = it)) },
-        )
+//        SettingToggle(
+//            title = "Health HERstory",
+//            subtitle = "Reminder to complete your health background",
+//            checked = state.notifHealthHerstory,
+//            onCheckedChange = { onSettingsChange(state.copy(notifHealthHerstory = it)) },
+//        )
       }
 
       // PARTNER SECTION PLACEHOLDER

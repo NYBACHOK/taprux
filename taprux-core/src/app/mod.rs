@@ -28,12 +28,14 @@ impl App for Application {
     fn update(&self, event: Event, model: &mut Model) -> Command<Effect, Event> {
         match event {
             Event::Initialize => Command::all([
+                Command::event(Event::Query(QueryRequest::AllTrackables)),
                 Command::event(Event::Query(QueryRequest::UserTrackables)),
                 Command::event(Event::Query(QueryRequest::Occurrences)),
-            ]),
+            ])
+            .then(render()),
             Event::Error(error) => {
                 model.error = Some(error);
-                render()
+                Command::event(Event::Initialize)
             }
             Event::Query(query_request) => Command::request_from_shell(query_request)
                 .map(|this| match this {
@@ -45,8 +47,11 @@ impl App for Application {
             Event::QueryResponse(query_response) => {
                 match query_response {
                     QueryResponse::None => (),
-                    QueryResponse::Trackables(list) => {
-                        model.list = list.into_iter().map(|this| (this.id, this)).collect()
+                    QueryResponse::AllTrackables(list) => {
+                        model.all_list = list.into_iter().map(|this| (this.id, this)).collect()
+                    }
+                    QueryResponse::UserTrackables(list) => {
+                        model.user_list = list.into_iter().map(|this| (this.id, this)).collect()
                     }
                     QueryResponse::Clicked(id) => {
                         if let Some(item) = model.occurrences.get_mut(&id) {
@@ -61,7 +66,7 @@ impl App for Application {
                         }
                     }
                     QueryResponse::AddedUserTrackable => {
-                        return Command::notify_shell(AppliedChanges::UserTrackable).build();
+                        return Command::event(Event::Query(QueryRequest::UserTrackables));
                     }
                     QueryResponse::Occurrences(occurrences) => model.occurrences = occurrences,
                 }
@@ -74,7 +79,8 @@ impl App for Application {
         let Model {
             error,
             details,
-            list,
+            all_list,
+            user_list,
             settings,
             occurrences,
         } = model.to_owned();
@@ -86,7 +92,8 @@ impl App for Application {
         ViewModel {
             error: None,
             details: details.to_owned(),
-            trackables: list.into_values().collect(),
+            all_trackables: all_list.into_values().collect(),
+            user_trackables: user_list.into_values().collect(),
             settings,
             occurrences,
         }

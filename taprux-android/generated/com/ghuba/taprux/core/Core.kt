@@ -597,7 +597,7 @@ sealed interface QueryResponse {
         }
     }
 
-    data class Trackables(
+    data class AllTrackables(
         val value: List<com.ghuba.taprux.core.TrackableModel>,
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
@@ -610,14 +610,39 @@ sealed interface QueryResponse {
         }
 
         companion object {
-            fun deserialize(deserializer: Deserializer): Trackables {
+            fun deserialize(deserializer: Deserializer): AllTrackables {
                 deserializer.increase_container_depth()
                 val value =
                     deserializer.deserializeListOf {
                         com.ghuba.taprux.core.TrackableModel.deserialize(deserializer)
                     }
                 deserializer.decrease_container_depth()
-                return Trackables(value)
+                return AllTrackables(value)
+            }
+        }
+    }
+
+    data class UserTrackables(
+        val value: List<com.ghuba.taprux.core.TrackableModel>,
+    ) : QueryResponse {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(2)
+            value.serialize(serializer) {
+                it.serialize(serializer)
+            }
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): UserTrackables {
+                deserializer.increase_container_depth()
+                val value =
+                    deserializer.deserializeListOf {
+                        com.ghuba.taprux.core.TrackableModel.deserialize(deserializer)
+                    }
+                deserializer.decrease_container_depth()
+                return UserTrackables(value)
             }
         }
     }
@@ -627,7 +652,7 @@ sealed interface QueryResponse {
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(2)
+            serializer.serialize_variant_index(3)
             value.serialize(serializer) { key, value ->
                 serializer.serialize_u32(key)
                 serializer.serialize_u32(value)
@@ -655,7 +680,7 @@ sealed interface QueryResponse {
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(3)
+            serializer.serialize_variant_index(4)
             serializer.serialize_u32(value)
             serializer.decrease_container_depth()
         }
@@ -675,7 +700,7 @@ sealed interface QueryResponse {
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(4)
+            serializer.serialize_variant_index(5)
             serializer.serialize_u32(value)
             serializer.decrease_container_depth()
         }
@@ -693,7 +718,7 @@ sealed interface QueryResponse {
     data object AddedUserTrackable: QueryResponse {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(5)
+            serializer.serialize_variant_index(6)
             serializer.decrease_container_depth()
         }
 
@@ -707,7 +732,7 @@ sealed interface QueryResponse {
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(6)
+            serializer.serialize_variant_index(7)
             value.serialize(serializer)
             serializer.decrease_container_depth()
         }
@@ -727,7 +752,7 @@ sealed interface QueryResponse {
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(7)
+            serializer.serialize_variant_index(8)
             value.serialize(serializer)
             serializer.decrease_container_depth()
         }
@@ -748,13 +773,14 @@ sealed interface QueryResponse {
             val index = deserializer.deserialize_variant_index()
             return when (index) {
                 0 -> None.deserialize(deserializer)
-                1 -> Trackables.deserialize(deserializer)
-                2 -> Occurrences.deserialize(deserializer)
-                3 -> Clicked.deserialize(deserializer)
-                4 -> DeletedOccurrence.deserialize(deserializer)
-                5 -> AddedUserTrackable.deserialize(deserializer)
-                6 -> Details.deserialize(deserializer)
-                7 -> Settings.deserialize(deserializer)
+                1 -> AllTrackables.deserialize(deserializer)
+                2 -> UserTrackables.deserialize(deserializer)
+                3 -> Occurrences.deserialize(deserializer)
+                4 -> Clicked.deserialize(deserializer)
+                5 -> DeletedOccurrence.deserialize(deserializer)
+                6 -> AddedUserTrackable.deserialize(deserializer)
+                7 -> Details.deserialize(deserializer)
+                8 -> Settings.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for QueryResponse: $index")
             }
         }
@@ -1033,7 +1059,8 @@ data class TrackableWithChildrenModel(
 data class ViewModel(
     val error: com.ghuba.taprux.core.ErrorModel? = null,
     val details: com.ghuba.taprux.core.TrackableWithChildrenModel? = null,
-    val trackables: List<com.ghuba.taprux.core.TrackableModel>,
+    val allTrackables: List<com.ghuba.taprux.core.TrackableModel>,
+    val userTrackables: List<com.ghuba.taprux.core.TrackableModel>,
     val occurrences: Map<UInt, UInt>,
     val settings: com.ghuba.taprux.core.ApplicationSettings,
 ) {
@@ -1045,7 +1072,10 @@ data class ViewModel(
         details.serializeOptionOf(serializer) {
             it.serialize(serializer)
         }
-        trackables.serialize(serializer) {
+        allTrackables.serialize(serializer) {
+            it.serialize(serializer)
+        }
+        userTrackables.serialize(serializer) {
             it.serialize(serializer)
         }
         occurrences.serialize(serializer) { key, value ->
@@ -1073,7 +1103,11 @@ data class ViewModel(
                 deserializer.deserializeOptionOf {
                     com.ghuba.taprux.core.TrackableWithChildrenModel.deserialize(deserializer)
                 }
-            val trackables =
+            val allTrackables =
+                deserializer.deserializeListOf {
+                    com.ghuba.taprux.core.TrackableModel.deserialize(deserializer)
+                }
+            val userTrackables =
                 deserializer.deserializeListOf {
                     com.ghuba.taprux.core.TrackableModel.deserialize(deserializer)
                 }
@@ -1085,7 +1119,7 @@ data class ViewModel(
                 }
             val settings = com.ghuba.taprux.core.ApplicationSettings.deserialize(deserializer)
             deserializer.decrease_container_depth()
-            return ViewModel(error, details, trackables, occurrences, settings)
+            return ViewModel(error, details, allTrackables, userTrackables, occurrences, settings)
         }
 
         @Throws(DeserializationError::class)

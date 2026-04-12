@@ -6,7 +6,8 @@ use crate::logic::{ApplicationSettings, TrackableModel, TrackableWithChildrenMod
 pub struct Model {
     pub error: Option<String>,
     pub details: Option<TrackableWithChildrenModel>,
-    pub list: HashMap<u32, TrackableModel>,
+    pub all_list: HashMap<u32, TrackableModel>,
+    pub user_list: HashMap<u32, TrackableModel>,
     pub occurrences: HashMap<u32, u32>,
     pub settings: ApplicationSettings,
 }

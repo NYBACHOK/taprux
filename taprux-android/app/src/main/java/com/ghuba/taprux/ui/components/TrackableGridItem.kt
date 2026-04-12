@@ -36,72 +36,79 @@ import com.ghuba.taprux.toByteArray
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrackableGridItem(
-  trackable: TrackableModel,
-  count: Int,
-  showName: Boolean,
-  isReadOnly: Boolean,
-  onClick: () -> Unit,
-  onDoubleClick: () -> Unit,
-  onLongClick: () -> Unit,
+    trackable: TrackableModel,
+    count: Int = 0,
+    showName: Boolean,
+    overrideClickPolicy: Boolean = false,
+    onClick: () -> Unit,
+    onDoubleClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
   val goalColor = getGoalColor(trackable, count)
 
+  val isClickable =
+      if (overrideClickPolicy) {
+        true
+      } else {
+        !trackable.hasSubEvents
+      }
+
   Surface(
-    modifier =
-      Modifier.aspectRatio(1f)
-        .alpha(if (isReadOnly) 0.75f else 1f)
-        .clip(RoundedCornerShape(12.dp))
-        .border(
-          width = 2.dp,
-          color = goalColor ?: MaterialTheme.colorScheme.outlineVariant,
-          shape = RoundedCornerShape(12.dp),
-        )
-        .combinedClickable(
-          enabled = !isReadOnly,
-          onClick = onClick,
-          onDoubleClick = onDoubleClick,
-          onLongClick = onLongClick,
-        ),
-    color = MaterialTheme.colorScheme.surface,
-    tonalElevation = 1.dp,
+      modifier =
+          Modifier.aspectRatio(1f)
+              .alpha(1f)
+              .clip(RoundedCornerShape(12.dp))
+              .border(
+                  width = 2.dp,
+                  color = goalColor ?: MaterialTheme.colorScheme.outlineVariant,
+                  shape = RoundedCornerShape(12.dp),
+              )
+              .combinedClickable(
+                  enabled = isClickable,
+                  onClick = onClick,
+                  onDoubleClick = onDoubleClick,
+                  onLongClick = onLongClick,
+              ),
+      color = MaterialTheme.colorScheme.surface,
+      tonalElevation = 1.dp,
   ) {
     Box(contentAlignment = Alignment.Center) {
       Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize(),
+          horizontalAlignment = Alignment.CenterHorizontally,
+          modifier = Modifier.fillMaxSize(),
       ) {
         Box(
-          modifier = Modifier.weight(1f).background(Color(0xFFBBDEFB)),
-          contentAlignment = Alignment.Center,
+            modifier = Modifier.weight(1f).background(Color(0xFFBBDEFB)),
+            contentAlignment = Alignment.Center,
         ) {
           val context = LocalContext.current
           val svgData = remember(trackable.svgIcon) { trackable.svgIcon.toByteArray() }
 
           AsyncImage(
-            model =
-              ImageRequest.Builder(context)
-                .data(svgData)
-                .decoderFactory(SvgDecoder.Factory())
-                .crossfade(true)
-                .build(),
-            contentDescription = trackable.name,
-            modifier = Modifier.fillMaxSize().padding(4.dp),
+              model =
+                  ImageRequest.Builder(context)
+                      .data(svgData)
+                      .decoderFactory(SvgDecoder.Factory())
+                      .crossfade(true)
+                      .build(),
+              contentDescription = trackable.name,
+              modifier = Modifier.fillMaxSize().padding(4.dp),
           )
         }
 
         if (showName) {
           Text(
-            text = trackable.name,
-            style = MaterialTheme.typography.labelSmall,
-            fontSize = 12.sp,
-            color = Color.White,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier =
-              Modifier.fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
-                .padding(vertical = 4.dp, horizontal = 2.dp),
+              text = trackable.name,
+              style = MaterialTheme.typography.labelSmall,
+              fontSize = 12.sp,
+              color = Color.White,
+              textAlign = TextAlign.Center,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              modifier =
+                  Modifier.fillMaxWidth()
+                      .background(MaterialTheme.colorScheme.primary)
+                      .padding(vertical = 4.dp, horizontal = 2.dp),
           )
         }
       }
@@ -109,18 +116,18 @@ fun TrackableGridItem(
       // Count Badge
       if (count > 0) {
         Box(
-          modifier =
-            Modifier.align(Alignment.TopEnd)
-              .padding(4.dp)
-              .clip(RoundedCornerShape(10.dp))
-              .background(MaterialTheme.colorScheme.primary)
-              .padding(horizontal = 6.dp, vertical = 2.dp)
+            modifier =
+                Modifier.align(Alignment.TopEnd)
+                    .padding(4.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.primary)
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
         ) {
           Text(
-            text = if (count > 99) "99+" else count.toString(),
-            color = MaterialTheme.colorScheme.onPrimary,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
+              text = if (count > 99) "99+" else count.toString(),
+              color = MaterialTheme.colorScheme.onPrimary,
+              style = MaterialTheme.typography.labelMedium,
+              fontWeight = FontWeight.Bold,
           )
         }
       }

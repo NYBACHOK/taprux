@@ -56,12 +56,12 @@ async fn execute_query(
     tracing::info!("processing query: {op:#?}");
 
     let response = match op {
-        QueryRequest::AllTrackables => QueryResponse::Trackables(
+        QueryRequest::AllTrackables => QueryResponse::AllTrackables(
             logic::list(&state.db_pool, 0)
                 .await
                 .context("retrieving list of trackables")?,
         ),
-        QueryRequest::UserTrackables => QueryResponse::Trackables(
+        QueryRequest::UserTrackables => QueryResponse::UserTrackables(
             logic::user_list(&state.db_pool)
                 .await
                 .context("retrieving list of user trackables")?,

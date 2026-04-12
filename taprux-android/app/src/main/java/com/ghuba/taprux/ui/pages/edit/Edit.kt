@@ -25,16 +25,20 @@ enum class EditCurrentPage {
 @Composable
 fun EditPage(
     trackables: List<TrackableModel>,
+    userTrackables: List<TrackableModel>,
+    onAddUserTrackable: (Int) -> Unit,
+    showNames: Boolean,
 ) {
   val activePage = remember { mutableStateOf(EditCurrentPage.Library) }
 
   Column(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.weight(1f)) {
       when (activePage.value) {
-        EditCurrentPage.Library -> LibraryTrackablesPage()
+        EditCurrentPage.Library ->
+            LibraryTrackablesPage(trackables, onAddUserTrackable, showNames)
         EditCurrentPage.Manage ->
             ManageTrackablesPage(
-                trackables = trackables,
+                trackables = userTrackables,
                 onBackClick = {},
                 onAddClick = {},
                 onEditClick = {},

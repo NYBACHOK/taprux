@@ -77,16 +77,28 @@ fun View(core: Core) {
   Column(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.weight(1f)) {
       when (activePage.value) {
-        AppPage.Edit -> EditPage(trackables = viewState.trackables)
+        AppPage.Edit ->
+            EditPage(
+                trackables = viewState.allTrackables,
+                userTrackables = viewState.userTrackables,
+                onAddUserTrackable = {
+                  core.update(Event.Query(QueryRequest.AddUserTrackable(it.toUInt())))
+                },
+                showNames = viewState.settings.showTrackableNames,
+            )
         AppPage.Track ->
             TrackPage(
-                trackables = viewState.trackables,
-                todayCounts = viewState.occurrences.map { it.key.toInt() to it.value.toInt() }.toMap(),
+                trackables = viewState.userTrackables,
+                todayCounts =
+                    viewState.occurrences.map { it.key.toInt() to it.value.toInt() }.toMap(),
                 showNames = viewState.settings.showTrackableNames,
-                hasAccess = viewState.settings.hasAccess,
                 onIncrement = { core.update(Event.Query(QueryRequest.AddOccurrence(it.toUInt()))) },
-                onDecrement = {},
-                onNavigateToDetails = {},
+                onDecrement = {
+                  core.update(Event.Query(QueryRequest.DeleteOccurrence(it.toUInt())))
+                },
+                onNavigateToDetails = {
+                  core.update(Event.Query(QueryRequest.Details(it.toUInt())))
+                },
             )
         AppPage.Insights -> InsightsPage()
         AppPage.Settings ->

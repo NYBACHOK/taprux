@@ -67,9 +67,19 @@ pub async fn user_trackables_add(
     mut e: impl AsMut<SqliteConnection>,
     trackable_id: u32,
 ) -> Result<(), sqlx::Error> {
-    sqlx::query("INSERT INTO user_trackables (trackable_id) VALUES ($1);")
+    #[derive(sqlx::FromRow)]
+    struct Raw {
+        count: u32,
+    }
+
+    let count = sqlx::query_as::<_, Raw>("SELECT COUNT(*) as count FROM user_trackables")
+        .fetch_one(e.as_mut())
+        .await?
+        .count;
+
+    sqlx::query("INSERT INTO user_trackables (trackable_id, order_key) VALUES ($1, $2);")
         .bind(trackable_id)
-        .bind(OffsetDateTime::now_utc())
+        .bind(count)
         .execute(e.as_mut())
         .await?;
 
@@ -119,7 +129,7 @@ pub async fn trackable_occurrence_delete(
     id: u32,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "DELETE FROM trackable_occurs t WHERE t.trackable_id = $1 ORDER BY timestamp DESC LIMIT 1;",
+        "DELETE FROM trackable_occurs WHERE trackable_id = $1 ORDER BY timestamp DESC LIMIT 1;",
     )
     .bind(id)
     .execute(e.as_mut())
@@ -155,7 +165,7 @@ pub async fn trackable_with_children(
 
     let sub_events = sqlx::query_as::<_, RawTrackable>(
         r#"
-        SELECT e.id, e.name, e.svg_icon, e.created_at, e.edited_at,e.user_enabled,
+        SELECT e.id, e.name, e.svg_icon, e.created_at, e.edited_at,
             (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
             0 as sub_events_count
         FROM trackables e
