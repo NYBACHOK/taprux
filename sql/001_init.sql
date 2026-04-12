@@ -12,7 +12,7 @@ CREATE TABLE trackables (
 CREATE TABLE trackable_occurs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     trackable_id INTEGER NOT NULL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY(trackable_id) REFERENCES trackables(id)
 );

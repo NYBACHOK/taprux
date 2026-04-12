@@ -98,7 +98,7 @@ pub async fn trackable_occurrences(
     let occurrences = sqlx::query_as::<_, Raw>(
         r#"
         SELECT 
-            e.id, (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS count
+            e.id, (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(recorded_at) = DATE('now')) AS count
         FROM trackables e
         JOIN user_trackables u ON u.trackable_id = e.id"#,
     )
@@ -129,7 +129,15 @@ pub async fn trackable_occurrence_delete(
     id: u32,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "DELETE FROM trackable_occurs WHERE trackable_id = $1 ORDER BY timestamp DESC LIMIT 1;",
+        r#"
+        DELETE FROM trackable_occurs 
+        WHERE rowid = (
+            SELECT rowid FROM trackable_occurs 
+            WHERE trackable_id = $1 
+            ORDER BY recorded_at DESC 
+            LIMIT 1
+        );
+        "#,
     )
     .bind(id)
     .execute(e.as_mut())
