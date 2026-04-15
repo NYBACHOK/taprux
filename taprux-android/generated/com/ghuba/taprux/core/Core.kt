@@ -949,6 +949,7 @@ data class Request(
 
 data class TrackableModel(
     val id: UInt,
+    val orderKey: UInt,
     val name: String,
     val svgIcon: List<UByte>,
     val hasSubEvents: Boolean,
@@ -956,6 +957,7 @@ data class TrackableModel(
     fun serialize(serializer: Serializer) {
         serializer.increase_container_depth()
         serializer.serialize_u32(id)
+        serializer.serialize_u32(orderKey)
         serializer.serialize_str(name)
         svgIcon.serialize(serializer) {
             serializer.serialize_u8(it)
@@ -974,6 +976,7 @@ data class TrackableModel(
         fun deserialize(deserializer: Deserializer): TrackableModel {
             deserializer.increase_container_depth()
             val id = deserializer.deserialize_u32()
+            val orderKey = deserializer.deserialize_u32()
             val name = deserializer.deserialize_str()
             val svgIcon =
                 deserializer.deserializeListOf {
@@ -981,7 +984,7 @@ data class TrackableModel(
                 }
             val hasSubEvents = deserializer.deserialize_bool()
             deserializer.decrease_container_depth()
-            return TrackableModel(id, name, svgIcon, hasSubEvents)
+            return TrackableModel(id, orderKey, name, svgIcon, hasSubEvents)
         }
 
         @Throws(DeserializationError::class)

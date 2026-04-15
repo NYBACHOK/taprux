@@ -14,6 +14,7 @@ const ELEMENTS_LIMIT: u32 = 100;
 #[derive(Facet, Serialize, Deserialize, Clone, Debug)]
 pub struct TrackableModel {
     pub id: u32,
+    pub order_key: u32,
     pub name: String,
     pub svg_icon: Vec<u8>,
     pub has_sub_events: bool,
@@ -33,6 +34,7 @@ impl TryFrom<RawTrackable> for TrackableModel {
     fn try_from(
         RawTrackable {
             id,
+            order_key,
             name,
             svg_icon,
             sub_events_count,
@@ -46,6 +48,7 @@ impl TryFrom<RawTrackable> for TrackableModel {
 
         Ok(Self {
             id: id.try_into()?,
+            order_key: order_key.try_into()?,
             name,
             svg_icon,
             has_sub_events: sub_events_count > 0,

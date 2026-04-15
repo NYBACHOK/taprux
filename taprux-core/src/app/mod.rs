@@ -92,11 +92,16 @@ impl App for Application {
             return ViewModel::error(&error);
         }
 
+        let all_trackables = all_list.into_values().collect::<Vec<_>>();
+        let mut user_trackables = user_list.into_values().collect::<Vec<_>>();
+
+        user_trackables.sort_by_key(|this| this.order_key);
+
         ViewModel {
             error: None,
             details: details.to_owned(),
-            all_trackables: all_list.into_values().collect(),
-            user_trackables: user_list.into_values().collect(),
+            all_trackables,
+            user_trackables,
             settings,
             occurrences,
         }

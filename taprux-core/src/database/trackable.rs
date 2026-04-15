@@ -7,6 +7,7 @@ use time::OffsetDateTime;
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RawTrackable {
     pub id: i32,
+    pub order_key : i32,
     pub name: String,
     pub svg_icon: String,
     pub created_at: OffsetDateTime,
@@ -33,12 +34,14 @@ pub async fn trackable(
     sqlx::query_as::<_, RawTrackable>(
         r#"
         SELECT 
-            e.id, e.name, e.svg_icon, e.created_at, e.edited_at,
-            (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
+        e.id, e.name, e.svg_icon, e.created_at, e.edited_at, 0 AS order_key,
+        COUNT(child.id) AS sub_events_count
         FROM trackables e
+        LEFT JOIN trackables child ON child.parent_id = e.id
         WHERE e.parent_id IS NULL
+        GROUP BY e.id
         ORDER BY sub_events_count, e.name
-        LIMIT $1 OFFSET $2"#,
+        LIMIT $1 OFFSET $2;"#,
     )
     .bind(limit)
     .bind(offset)
@@ -52,7 +55,7 @@ pub async fn user_trackables(
     sqlx::query_as::<_, RawTrackable>(
         r#"
         SELECT 
-            e.id, e.name, e.svg_icon, u.created_at, u.edited_at,
+            e.id, e.name, e.svg_icon, u.created_at, u.edited_at, u.order_key,
             (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
         FROM trackables e
         JOIN user_trackables u ON u.trackable_id = e.id
@@ -153,6 +156,7 @@ pub async fn trackable_with_children(
 ) -> Result<RawTrackableWithChildren, sqlx::Error> {
     let RawTrackable {
         id,
+        order_key : _,
         name,
         svg_icon,
         created_at,
