@@ -68,7 +68,8 @@ impl App for Application {
                         }
                     }
                     QueryResponse::AddedUserTrackable => {
-                        return Command::event(Event::Query(QueryRequest::UserTrackables));
+                        return Command::event(Event::Query(QueryRequest::UserTrackables))
+                            .and(Command::notify_shell(AppliedChanges::UserTrackable).build());
                     }
                     QueryResponse::Occurrences(occurrences) => model.occurrences = occurrences,
                 }

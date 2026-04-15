@@ -1,6 +1,7 @@
 package com.ghuba.taprux
 
 import android.util.Log
+import com.ghuba.taprux.core.AppliedChanges
 import com.ghuba.taprux.core.CoreFfi
 import com.ghuba.taprux.core.CruxShell
 import com.ghuba.taprux.core.Effect
@@ -8,6 +9,7 @@ import com.ghuba.taprux.core.Event
 import com.ghuba.taprux.core.Request
 import com.ghuba.taprux.core.Requests
 import com.ghuba.taprux.core.ViewModel
+import com.ghuba.taprux.events.TrackableAdded
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.greenrobot.eventbus.EventBus
 
 open class Core : androidx.lifecycle.ViewModel() {
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -46,11 +49,16 @@ open class Core : androidx.lifecycle.ViewModel() {
   }
 
   private fun processRequest(request: Request) {
-    Log.d(TAG, "processRequest: $request")
+    Log.i(TAG, "processRequest: $request")
 
     when (request.effect) {
       is Effect.Render -> {
         render()
+      }
+      is Effect.Changes -> {
+        when ((request.effect as Effect.Changes).value) {
+          AppliedChanges.USERTRACKABLE -> EventBus.getDefault().post(TrackableAdded())
+        }
       }
 
       else -> {}
