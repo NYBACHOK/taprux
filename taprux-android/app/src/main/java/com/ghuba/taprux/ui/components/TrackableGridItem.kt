@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,7 +42,6 @@ fun TrackableGridItem(
     trackable: TrackableModel,
     count: Int = 0,
     showName: Boolean,
-    overrideClickPolicy: Boolean = false,
     onClick: () -> Unit,
     onDoubleClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -114,7 +116,7 @@ fun TrackableGridItem(
       }
 
       // Count Badge
-      if (count > 0) {
+      if (count > 0 && !hasChildren) {
         Box(
             modifier =
                 Modifier.align(Alignment.TopEnd)
@@ -133,21 +135,15 @@ fun TrackableGridItem(
       }
 
       if (hasChildren) {
-        Box(
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "sub events indicator",
             modifier =
-                Modifier.align(Alignment.TopStart)
+                Modifier.align(Alignment.TopEnd)
                     .padding(4.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.secondary)
                     .padding(horizontal = 6.dp, vertical = 2.dp),
-        ) {
-          Text(
-              text = "SUB",
-              color = MaterialTheme.colorScheme.onSecondary,
-              style = MaterialTheme.typography.labelSmall,
-              fontWeight = FontWeight.Bold,
-          )
-        }
+        )
       }
     }
   }

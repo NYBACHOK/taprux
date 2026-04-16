@@ -67,7 +67,6 @@ fun LibraryTrackablesPage(
             TrackableGridItem(
                 trackable = trackable,
                 showName = showNames,
-                overrideClickPolicy = true,
                 onClick = { toast.show() },
                 onDoubleClick = { toast.show() },
                 onLongClick = { onAddUserTrackable(id) },
