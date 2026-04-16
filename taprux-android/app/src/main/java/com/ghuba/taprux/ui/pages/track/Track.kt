@@ -1,110 +1,120 @@
 package com.ghuba.taprux.ui.pages.track
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.ghuba.taprux.core.TrackableModel
-import com.ghuba.taprux.ui.components.TrackableGridItem
+import com.ghuba.taprux.core.TrackableWithChildrenModel
+import com.ghuba.taprux.ui.components.TabItem
 
-@OptIn(ExperimentalFoundationApi::class)
+enum class TrackCurrentPage {
+  Trackables,
+  Details,
+}
+
 @Composable
 fun TrackPage(
     trackables: List<TrackableModel>,
     todayCounts: Map<Int, Int>,
     showNames: Boolean,
+    details: TrackableWithChildrenModel?,
     onIncrement: (Int) -> Unit,
     onDecrement: (Int) -> Unit,
     onNavigateToDetails: (Int) -> Unit,
 ) {
-  val columns = 3
-  val rows = 4
-  val itemsPerPage = columns * rows
+  val activePage = remember { mutableStateOf(TrackCurrentPage.Trackables) }
 
-  val pages = trackables.chunked(itemsPerPage)
-  val pagerState = rememberPagerState(pageCount = { pages.size })
+  // When navigating to details, switch to Details page
+  // This is a bit hacky, but since onNavigateToDetails is called when details is set,
+  // we can assume it's to show details
+  if (details != null && activePage.value == TrackCurrentPage.Trackables) {
+    activePage.value = TrackCurrentPage.Details
+  }
 
-  Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-    if (trackables.isEmpty()) {
-      Text(
-          "No trackables yet. Add your first one!",
-          modifier = Modifier.align(Alignment.Center),
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-    } else {
-      Column(modifier = Modifier.fillMaxSize()) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.Top,
-        ) { pageIndex ->
-          val pageItems = pages[pageIndex]
-
-          LazyVerticalGrid(
-              columns = GridCells.Fixed(columns),
-              contentPadding = PaddingValues(16.dp),
-              verticalArrangement = Arrangement.spacedBy(16.dp),
-              horizontalArrangement = Arrangement.spacedBy(16.dp),
-              modifier = Modifier.fillMaxSize(),
-          ) {
-            items(pageItems, key = { it.id.toInt() }) { trackable ->
-              val id = trackable.id.toInt()
-
-              val count = todayCounts[id] ?: 0
-              TrackableGridItem(
-                  trackable = trackable,
-                  count = count,
-                  showName = showNames,
-                  onClick = { onIncrement(id) },
-                  onDoubleClick = { onDecrement(id) },
-                  onLongClick = { onNavigateToDetails(id) },
+  Column(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.weight(1f)) {
+      when (activePage.value) {
+        TrackCurrentPage.Trackables ->
+            ListPage(
+                trackables = trackables,
+                todayCounts = todayCounts,
+                showNames = showNames,
+                onIncrement = onIncrement,
+                onDecrement = onDecrement,
+                onNavigateToDetails = {
+                  onNavigateToDetails(it)
+                  activePage.value = TrackCurrentPage.Details
+                },
+            )
+        TrackCurrentPage.Details ->
+            details?.let { detailsModel ->
+              DetailsPage(
+                  details = detailsModel,
+                  allTrackables = trackables, // assuming allTrackables is trackables here
+                  todayCounts = todayCounts,
+                  showNames = showNames,
+                  onIncrement = onIncrement,
+                  onDecrement = onDecrement,
+                  onNavigateToDetails = onNavigateToDetails,
               )
             }
-          }
-        }
-
-        // Pagination Dots
-        if (pages.size > 1) {
-          Row(Modifier.height(40.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            repeat(pages.size) { iteration ->
-              val color =
-                  if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.primary
-                  else MaterialTheme.colorScheme.outlineVariant
-
-              val width = if (pagerState.currentPage == iteration) 24.dp else 8.dp
-
-              Box(
-                  modifier =
-                      Modifier.padding(4.dp)
-                          .clip(RoundedCornerShape(4.dp))
-                          .background(color)
-                          .size(width = width, height = 8.dp)
-              )
-            }
-          }
-        }
+                ?: run {
+                  // If details is null, show a message or switch back
+                  Text(
+                      "No details available",
+                      modifier = Modifier.align(Alignment.Center),
+                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  )
+                }
       }
+
+      if (details != null) {
+        TrackTabBar(
+            activePage = activePage.value,
+            onPageSelected = { activePage.value = it },
+        )
+      }
+    }
+  }
+}
+
+@Composable
+fun TrackTabBar(
+    activePage: TrackCurrentPage,
+    onPageSelected: (TrackCurrentPage) -> Unit,
+) {
+
+  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        tonalElevation = 8.dp,
+    ) {
+      TabItem(
+          page = TrackCurrentPage.Trackables,
+          icon = Icons.AutoMirrored.Filled.List,
+          isActive = activePage == TrackCurrentPage.Trackables,
+          onSelect = onPageSelected,
+      )
+
+      TabItem(
+          page = TrackCurrentPage.Details,
+          icon = Icons.Default.Info,
+          isActive = activePage == TrackCurrentPage.Details,
+          onSelect = onPageSelected,
+      )
     }
   }
 }

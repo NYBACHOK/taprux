@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -102,6 +103,7 @@ fun View(core: Core) {
                 todayCounts =
                     viewState.occurrences.map { it.key.toInt() to it.value.toInt() }.toMap(),
                 showNames = viewState.settings.showTrackableNames,
+                details = viewState.details,
                 onIncrement = { core.update(Event.Query(QueryRequest.AddOccurrence(it.toUInt()))) },
                 onDecrement = {
                   core.update(Event.Query(QueryRequest.DeleteOccurrence(it.toUInt())))
