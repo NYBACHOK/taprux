@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -33,8 +34,13 @@ fun TrackPage(
     onIncrement: (Int) -> Unit,
     onDecrement: (Int) -> Unit,
     onNavigateToDetails: (Int) -> Unit,
+    onResetPageCallback: (((() -> Unit) -> Unit))? = null,
 ) {
   val activePage = remember { mutableStateOf(TrackCurrentPage.Trackables) }
+
+  LaunchedEffect(Unit) {
+    onResetPageCallback?.invoke { activePage.value = TrackCurrentPage.Trackables }
+  }
 
   Column(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.weight(1f)) {

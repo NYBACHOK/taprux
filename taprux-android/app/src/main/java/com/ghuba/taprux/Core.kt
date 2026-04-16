@@ -34,6 +34,9 @@ open class Core : androidx.lifecycle.ViewModel() {
   private val _viewModel: MutableStateFlow<ViewModel> = MutableStateFlow(getViewModel())
   val viewModel: StateFlow<ViewModel> = _viewModel.asStateFlow()
 
+  private val _error: MutableStateFlow<Pair<String, Boolean>?> = MutableStateFlow(null)
+  val error: StateFlow<Pair<String, Boolean>?> = _error.asStateFlow()
+
   fun update(event: Event) {
     scope.launch {
       val effects = coreFfi.update(event.bincodeSerialize())
@@ -60,9 +63,16 @@ open class Core : androidx.lifecycle.ViewModel() {
           AppliedChanges.USERTRACKABLE -> EventBus.getDefault().post(TrackableAdded())
         }
       }
-
+      is Effect.Error -> {
+        val errorMessage = (request.effect as Effect.Error).value
+        _error.value = errorMessage to false
+      }
       else -> {}
     }
+  }
+
+  fun dismissError() {
+    _error.value = null
   }
 
   private fun render() {

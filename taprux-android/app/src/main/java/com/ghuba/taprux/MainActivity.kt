@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -30,6 +28,7 @@ import com.ghuba.taprux.core.Event
 import com.ghuba.taprux.core.QueryRequest
 import com.ghuba.taprux.events.TrackableAdded
 import com.ghuba.taprux.ui.components.TabItem
+import com.ghuba.taprux.ui.dialogs.ErrorDialog
 import com.ghuba.taprux.ui.pages.edit.EditPage
 import com.ghuba.taprux.ui.pages.insights.InsightsPage
 import com.ghuba.taprux.ui.pages.settings.SettingsScreen
@@ -83,7 +82,9 @@ fun createInsets(view: View?) {
 @Composable
 fun View(core: Core) {
   val viewState by core.viewModel.collectAsState()
+  val errorState by core.error.collectAsState()
   val activePage = remember { mutableStateOf(AppPage.Track) }
+  val resetPageCallback = remember { mutableStateOf<(() -> Unit)?>(null) }
 
   Column(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.weight(1f)) {
@@ -111,6 +112,7 @@ fun View(core: Core) {
                 onNavigateToDetails = {
                   core.update(Event.Query(QueryRequest.Details(it.toUInt())))
                 },
+                onResetPageCallback = { resetFn -> resetPageCallback.value = resetFn },
             )
         AppPage.Insights -> InsightsPage()
         AppPage.Settings ->
@@ -127,6 +129,26 @@ fun View(core: Core) {
                 onCancelAccount = {},
             )
       }
+    }
+
+    // Error Dialog
+    errorState?.let { (errorMessage, isCritical) ->
+      ErrorDialog(
+          message = errorMessage,
+          isCritical = isCritical,
+          onDismiss = { core.dismissError() },
+          onRestart = {
+            if (isCritical) {
+              // Restart the app by killing the process
+              android.os.Process.killProcess(android.os.Process.myPid())
+            } else {
+              core.dismissError()
+              activePage.value = AppPage.Track
+              resetPageCallback.value?.invoke() // Reset Track page to Trackables view
+              core.update(Event.Initialize)
+            }
+          },
+      )
     }
 
     TabBar(activePage = activePage.value, onPageSelected = { activePage.value = it })
@@ -152,12 +174,12 @@ fun TabBar(activePage: AppPage, onPageSelected: (AppPage) -> Unit) {
         isActive = activePage == AppPage.Track,
         onSelect = onPageSelected,
     )
-//    TabItem(
-//        page = AppPage.Insights,
-//        icon = Icons.Default.BarChart,
-//        isActive = activePage == AppPage.Insights,
-//        onSelect = onPageSelected,
-//    )
+    //    TabItem(
+    //        page = AppPage.Insights,
+    //        icon = Icons.Default.BarChart,
+    //        isActive = activePage == AppPage.Insights,
+    //        onSelect = onPageSelected,
+    //    )
     TabItem(
         page = AppPage.Settings,
         icon = Icons.Default.Settings,
