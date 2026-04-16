@@ -59,6 +59,7 @@ pub async fn user_trackables(
             (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
         FROM trackables e
         JOIN user_trackables u ON u.trackable_id = e.id
+        WHERE e.parent_id IS NULL
         ORDER BY u.order_key ASC"#,
     )
     .fetch_all(e.as_mut())
