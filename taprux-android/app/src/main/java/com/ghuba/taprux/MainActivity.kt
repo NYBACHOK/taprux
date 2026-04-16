@@ -152,12 +152,12 @@ fun TabBar(activePage: AppPage, onPageSelected: (AppPage) -> Unit) {
         isActive = activePage == AppPage.Track,
         onSelect = onPageSelected,
     )
-    TabItem(
-        page = AppPage.Insights,
-        icon = Icons.Default.BarChart,
-        isActive = activePage == AppPage.Insights,
-        onSelect = onPageSelected,
-    )
+//    TabItem(
+//        page = AppPage.Insights,
+//        icon = Icons.Default.BarChart,
+//        isActive = activePage == AppPage.Insights,
+//        onSelect = onPageSelected,
+//    )
     TabItem(
         page = AppPage.Settings,
         icon = Icons.Default.Settings,
