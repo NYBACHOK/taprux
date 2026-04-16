@@ -66,7 +66,7 @@ open class Core : androidx.lifecycle.ViewModel() {
   }
 
   private fun render() {
-    _viewModel.value = getViewModel().also { Log.d(TAG, "render: Error: ${it.error}") }
+    _viewModel.value = getViewModel()
   }
 
   private fun getViewModel(): ViewModel {

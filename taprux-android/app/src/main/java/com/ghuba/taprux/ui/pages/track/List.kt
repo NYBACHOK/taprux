@@ -28,16 +28,15 @@ import androidx.compose.ui.unit.dp
 import com.ghuba.taprux.core.TrackableModel
 import com.ghuba.taprux.ui.components.TrackableGridItem
 
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ListPage(
-  trackables: List<TrackableModel>,
-  todayCounts: Map<Int, Int>,
-  showNames: Boolean,
-  onIncrement: (Int) -> Unit,
-  onDecrement: (Int) -> Unit,
-  onNavigateToDetails: (Int) -> Unit,
+    trackables: List<TrackableModel>,
+    todayCounts: Map<Int, Int>,
+    showNames: Boolean,
+    onIncrement: (Int) -> Unit,
+    onDecrement: (Int) -> Unit,
+    onNavigateToDetails: (Int) -> Unit,
 ) {
   val columns = 3
   val rows = 4
@@ -46,42 +45,50 @@ fun ListPage(
   val pages = trackables.chunked(itemsPerPage)
   val pagerState = rememberPagerState(pageCount = { pages.size })
 
-  Box(modifier = Modifier
-    .fillMaxSize()
-    .background(MaterialTheme.colorScheme.background)) {
+  Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
     if (trackables.isEmpty()) {
       Text(
-        "No trackables yet. Add your first one!",
-        modifier = Modifier.align(Alignment.Center),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+          "No trackables yet. Add your first one!",
+          modifier = Modifier.align(Alignment.Center),
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
     } else {
       Column(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(
-          state = pagerState,
-          modifier = Modifier.weight(1f),
-          verticalAlignment = Alignment.Top,
+            state = pagerState,
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.Top,
         ) { pageIndex ->
           val pageItems = pages[pageIndex]
 
           LazyVerticalGrid(
-            columns = GridCells.Fixed(columns),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxSize(),
+              columns = GridCells.Fixed(columns),
+              contentPadding = PaddingValues(16.dp),
+              verticalArrangement = Arrangement.spacedBy(16.dp),
+              horizontalArrangement = Arrangement.spacedBy(16.dp),
+              modifier = Modifier.fillMaxSize(),
           ) {
             items(pageItems, key = { it.id.toInt() }) { trackable ->
               val id = trackable.id.toInt()
 
               val count = todayCounts[id] ?: 0
               TrackableGridItem(
-                trackable = trackable,
-                count = count,
-                showName = showNames,
-                onClick = { onIncrement(id) },
-                onDoubleClick = { onDecrement(id) },
-                onLongClick = { onNavigateToDetails(id) },
+                  trackable = trackable,
+                  count = count,
+                  showName = showNames,
+                  onClick = {
+                    if (trackable.hasSubEvents) {
+                      onNavigateToDetails(id)
+                    } else {
+                      onIncrement(id)
+                    }
+                  },
+                  onDoubleClick = {
+                    if (!trackable.hasSubEvents) {
+                      onDecrement(id)
+                    }
+                  },
+                  onLongClick = { onNavigateToDetails(id) },
               )
             }
           }
@@ -89,23 +96,20 @@ fun ListPage(
 
         // Pagination Dots
         if (pages.size > 1) {
-          Row(Modifier
-            .height(40.dp)
-            .fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+          Row(Modifier.height(40.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             repeat(pages.size) { iteration ->
               val color =
-                if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outlineVariant
+                  if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.primary
+                  else MaterialTheme.colorScheme.outlineVariant
 
               val width = if (pagerState.currentPage == iteration) 24.dp else 8.dp
 
               Box(
-                modifier =
-                  Modifier
-                    .padding(4.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(color)
-                    .size(width=width,height=8.dp)
+                  modifier =
+                      Modifier.padding(4.dp)
+                          .clip(RoundedCornerShape(4.dp))
+                          .background(color)
+                          .size(width = width, height = 8.dp)
               )
             }
           }

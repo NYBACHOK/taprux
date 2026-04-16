@@ -36,13 +36,6 @@ fun TrackPage(
 ) {
   val activePage = remember { mutableStateOf(TrackCurrentPage.Trackables) }
 
-  // When navigating to details, switch to Details page
-  // This is a bit hacky, but since onNavigateToDetails is called when details is set,
-  // we can assume it's to show details
-  if (details != null && activePage.value == TrackCurrentPage.Trackables) {
-    activePage.value = TrackCurrentPage.Details
-  }
-
   Column(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.weight(1f)) {
       when (activePage.value) {
@@ -62,12 +55,10 @@ fun TrackPage(
             details?.let { detailsModel ->
               DetailsPage(
                   details = detailsModel,
-                  allTrackables = trackables, // assuming allTrackables is trackables here
                   todayCounts = todayCounts,
                   showNames = showNames,
                   onIncrement = onIncrement,
                   onDecrement = onDecrement,
-                  onNavigateToDetails = onNavigateToDetails,
               )
             }
                 ?: run {

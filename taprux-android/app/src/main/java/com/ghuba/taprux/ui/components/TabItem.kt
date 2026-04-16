@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 @Composable
 fun <T : Enum<T>> RowScope.TabItem(
   page: T,
+  label : String? = null,
   icon: ImageVector,
   isActive: Boolean,
   onSelect: (T) -> Unit,
@@ -20,7 +21,7 @@ fun <T : Enum<T>> RowScope.TabItem(
     selected = isActive,
     onClick = { onSelect(page) },
     icon = { Icon(imageVector = icon, contentDescription = page.name) },
-    label = { Text(text = page.name, style = MaterialTheme.typography.labelMedium) },
+    label =  { Text(text = label ?: page.name, style = MaterialTheme.typography.labelMedium) },
     colors =
       NavigationBarItemDefaults.colors(
         selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,

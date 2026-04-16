@@ -45,12 +45,12 @@ fun TrackableGridItem(
     onLongClick: () -> Unit,
 ) {
   val goalColor = getGoalColor(trackable, count)
-
-  val isClickable =
-      if (overrideClickPolicy) {
-        true
-      } else {
-        !trackable.hasSubEvents
+  val hasChildren = trackable.hasSubEvents
+  val borderColor =
+      when {
+        goalColor != null -> goalColor
+        hasChildren -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.outlineVariant
       }
 
   Surface(
@@ -60,11 +60,11 @@ fun TrackableGridItem(
               .clip(RoundedCornerShape(12.dp))
               .border(
                   width = 2.dp,
-                  color = goalColor ?: MaterialTheme.colorScheme.outlineVariant,
+                  color = borderColor,
                   shape = RoundedCornerShape(12.dp),
               )
               .combinedClickable(
-                  enabled = isClickable,
+                  enabled = true,
                   onClick = onClick,
                   onDoubleClick = onDoubleClick,
                   onLongClick = onLongClick,
@@ -127,6 +127,24 @@ fun TrackableGridItem(
               text = if (count > 99) "99+" else count.toString(),
               color = MaterialTheme.colorScheme.onPrimary,
               style = MaterialTheme.typography.labelMedium,
+              fontWeight = FontWeight.Bold,
+          )
+        }
+      }
+
+      if (hasChildren) {
+        Box(
+            modifier =
+                Modifier.align(Alignment.TopStart)
+                    .padding(4.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.secondary)
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+        ) {
+          Text(
+              text = "SUB",
+              color = MaterialTheme.colorScheme.onSecondary,
+              style = MaterialTheme.typography.labelSmall,
               fontWeight = FontWeight.Bold,
           )
         }

@@ -7,6 +7,7 @@ use super::*;
 pub enum Effect {
     Render(RenderOperation),
     Changes(AppliedChanges),
+    Error(CoreError),
     Query(QueryRequest),
 }
 
@@ -17,6 +18,14 @@ pub enum AppliedChanges {
 }
 
 impl crux_core::capability::Operation for AppliedChanges {
+    type Output = ();
+}
+
+#[derive(Facet, Serialize, Deserialize, Clone, Debug)]
+#[facet(transparent)]
+pub struct CoreError(pub String);
+
+impl crux_core::capability::Operation for CoreError {
     type Output = ();
 }
 

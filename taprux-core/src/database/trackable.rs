@@ -7,7 +7,7 @@ use time::OffsetDateTime;
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RawTrackable {
     pub id: i32,
-    pub order_key : i32,
+    pub order_key: i32,
     pub name: String,
     pub svg_icon: String,
     pub created_at: OffsetDateTime,
@@ -59,7 +59,6 @@ pub async fn user_trackables(
             (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
         FROM trackables e
         JOIN user_trackables u ON u.trackable_id = e.id
-        WHERE e.parent_id IS NULL
         ORDER BY u.order_key ASC"#,
     )
     .fetch_all(e.as_mut())
@@ -75,16 +74,39 @@ pub async fn user_trackables_add(
         count: u32,
     }
 
-    let count = sqlx::query_as::<_, Raw>("SELECT COUNT(*) as count FROM user_trackables")
+    let mut order_key = sqlx::query_as::<_, Raw>("SELECT COUNT(*) as count FROM user_trackables")
         .fetch_one(e.as_mut())
         .await?
         .count;
 
-    sqlx::query("INSERT INTO user_trackables (trackable_id, order_key) VALUES ($1, $2);")
-        .bind(trackable_id)
-        .bind(count)
-        .execute(e.as_mut())
-        .await?;
+    let trackable_ids = sqlx::query_scalar::<_, i32>(
+        r#"
+        SELECT id FROM trackables WHERE id = $1
+        UNION ALL
+        SELECT id FROM trackables WHERE parent_id = $1
+        ORDER BY id;
+        "#,
+    )
+    .bind(trackable_id)
+    .fetch_all(e.as_mut())
+    .await?;
+
+    for trackable_id in trackable_ids {
+        let existing_count: i32 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM user_trackables WHERE trackable_id = $1")
+                .bind(trackable_id)
+                .fetch_one(e.as_mut())
+                .await?;
+
+        if existing_count == 0 {
+            sqlx::query("INSERT INTO user_trackables (trackable_id, order_key) VALUES ($1, $2);")
+                .bind(trackable_id)
+                .bind(order_key)
+                .execute(e.as_mut())
+                .await?;
+            order_key += 1;
+        }
+    }
 
     Ok(())
 }
@@ -156,7 +178,7 @@ pub async fn trackable_with_children(
 ) -> Result<RawTrackableWithChildren, sqlx::Error> {
     let RawTrackable {
         id,
-        order_key : _,
+        order_key: _,
         name,
         svg_icon,
         created_at,
@@ -165,7 +187,7 @@ pub async fn trackable_with_children(
     } = sqlx::query_as::<_, RawTrackable>(
         r#"
         SELECT 
-            e.id, e.name, e.svg_icon, e.created_at, e.edited_at,
+            e.id, e.name, e.svg_icon, e.created_at, e.edited_at, 0 as order_key,
             (SELECT COUNT(*) FROM trackables WHERE parent_id = e.id) AS sub_events_count
         FROM trackables e
         WHERE e.parent_id IS NULL AND e.id = $1;
@@ -178,9 +200,11 @@ pub async fn trackable_with_children(
     let sub_events = sqlx::query_as::<_, RawTrackable>(
         r#"
         SELECT e.id, e.name, e.svg_icon, e.created_at, e.edited_at,
-            (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(timestamp) = DATE('now')) AS event_occurrence,
-            0 as sub_events_count
+            (SELECT COUNT(*) FROM trackable_occurs WHERE trackable_id = e.id AND DATE(recorded_at) = DATE('now')) AS event_occurrence,
+            0 as sub_events_count,
+            u.order_key
         FROM trackables e
+        JOIN user_trackables u ON u.trackable_id = e.id
         WHERE e.parent_id = $1;"#,
     )
     .bind(trackable_id)

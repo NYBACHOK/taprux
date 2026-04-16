@@ -27,16 +27,17 @@ impl App for Application {
 
     fn update(&self, event: Event, model: &mut Model) -> Command<Effect, Event> {
         match event {
-            Event::Initialize => Command::all([
-                Command::event(Event::Query(QueryRequest::AllTrackables)),
-                Command::event(Event::Query(QueryRequest::UserTrackables)),
-                Command::event(Event::Query(QueryRequest::Occurrences)),
-            ])
-            .then(render()),
-            Event::Error(error) => {
-                model.error = Some(error);
-                Command::event(Event::Initialize)
+            Event::Initialize => {
+                *model = Default::default();
+
+                Command::all([
+                    Command::event(Event::Query(QueryRequest::AllTrackables)),
+                    Command::event(Event::Query(QueryRequest::UserTrackables)),
+                    Command::event(Event::Query(QueryRequest::Occurrences)),
+                ])
+                .then(render())
             }
+            Event::Error(error) => Command::notify_shell(CoreError(error)).build(),
             Event::Query(query_request) => Command::request_from_shell(query_request)
                 .map(|this| match this {
                     QueryResult::Response(query) => Event::QueryResponse(query),
@@ -80,7 +81,6 @@ impl App for Application {
 
     fn view(&self, model: &Model) -> ViewModel {
         let Model {
-            error,
             details,
             all_list,
             user_list,
@@ -88,17 +88,12 @@ impl App for Application {
             occurrences,
         } = model.to_owned();
 
-        if let Some(error) = error {
-            return ViewModel::error(&error);
-        }
-
         let all_trackables = all_list.into_values().collect::<Vec<_>>();
         let mut user_trackables = user_list.into_values().collect::<Vec<_>>();
 
         user_trackables.sort_by_key(|this| this.order_key);
 
         ViewModel {
-            error: None,
             details: details.to_owned(),
             all_trackables,
             user_trackables,

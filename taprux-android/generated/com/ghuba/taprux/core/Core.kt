@@ -230,12 +230,32 @@ sealed interface Effect {
         }
     }
 
+    data class Error(
+        val value: String,
+    ) : Effect {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(2)
+            serializer.serialize_str(value)
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): Error {
+                deserializer.increase_container_depth()
+                val value = deserializer.deserialize_str()
+                deserializer.decrease_container_depth()
+                return Error(value)
+            }
+        }
+    }
+
     data class Query(
         val value: com.ghuba.taprux.core.QueryRequest,
     ) : Effect {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(2)
+            serializer.serialize_variant_index(3)
             value.serialize(serializer)
             serializer.decrease_container_depth()
         }
@@ -257,54 +277,14 @@ sealed interface Effect {
             return when (index) {
                 0 -> Render.deserialize(deserializer)
                 1 -> Changes.deserialize(deserializer)
-                2 -> Query.deserialize(deserializer)
+                2 -> Error.deserialize(deserializer)
+                3 -> Query.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for Effect: $index")
             }
         }
 
         @Throws(DeserializationError::class)
         fun bincodeDeserialize(input: ByteArray?): Effect {
-            if (input == null) {
-                throw DeserializationError("Cannot deserialize null array")
-            }
-            val deserializer = BincodeDeserializer(input)
-            val value = deserialize(deserializer)
-            if (deserializer.get_buffer_offset() < input.size) {
-                throw DeserializationError("Some input bytes were not read")
-            }
-            return value
-        }
-    }
-}
-
-data class ErrorModel(
-    val isCritical: Boolean,
-    val description: String,
-) {
-    fun serialize(serializer: Serializer) {
-        serializer.increase_container_depth()
-        serializer.serialize_bool(isCritical)
-        serializer.serialize_str(description)
-        serializer.decrease_container_depth()
-    }
-
-    fun bincodeSerialize(): ByteArray {
-        val serializer = BincodeSerializer()
-        serialize(serializer)
-        return serializer.get_bytes()
-    }
-
-    companion object {
-        fun deserialize(deserializer: Deserializer): ErrorModel {
-            deserializer.increase_container_depth()
-            val isCritical = deserializer.deserialize_bool()
-            val description = deserializer.deserialize_str()
-            deserializer.decrease_container_depth()
-            return ErrorModel(isCritical, description)
-        }
-
-        @Throws(DeserializationError::class)
-        fun bincodeDeserialize(input: ByteArray?): ErrorModel {
             if (input == null) {
                 throw DeserializationError("Cannot deserialize null array")
             }
@@ -1060,7 +1040,6 @@ data class TrackableWithChildrenModel(
 }
 
 data class ViewModel(
-    val error: com.ghuba.taprux.core.ErrorModel? = null,
     val details: com.ghuba.taprux.core.TrackableWithChildrenModel? = null,
     val allTrackables: List<com.ghuba.taprux.core.TrackableModel>,
     val userTrackables: List<com.ghuba.taprux.core.TrackableModel>,
@@ -1069,9 +1048,6 @@ data class ViewModel(
 ) {
     fun serialize(serializer: Serializer) {
         serializer.increase_container_depth()
-        error.serializeOptionOf(serializer) {
-            it.serialize(serializer)
-        }
         details.serializeOptionOf(serializer) {
             it.serialize(serializer)
         }
@@ -1098,10 +1074,6 @@ data class ViewModel(
     companion object {
         fun deserialize(deserializer: Deserializer): ViewModel {
             deserializer.increase_container_depth()
-            val error =
-                deserializer.deserializeOptionOf {
-                    com.ghuba.taprux.core.ErrorModel.deserialize(deserializer)
-                }
             val details =
                 deserializer.deserializeOptionOf {
                     com.ghuba.taprux.core.TrackableWithChildrenModel.deserialize(deserializer)
@@ -1122,7 +1094,7 @@ data class ViewModel(
                 }
             val settings = com.ghuba.taprux.core.ApplicationSettings.deserialize(deserializer)
             deserializer.decrease_container_depth()
-            return ViewModel(error, details, allTrackables, userTrackables, occurrences, settings)
+            return ViewModel(details, allTrackables, userTrackables, occurrences, settings)
         }
 
         @Throws(DeserializationError::class)

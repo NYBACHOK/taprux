@@ -4,7 +4,6 @@ use crate::logic::{ApplicationSettings, TrackableModel, TrackableWithChildrenMod
 
 #[derive(Debug, Clone, Default)]
 pub struct Model {
-    pub error: Option<String>,
     pub details: Option<TrackableWithChildrenModel>,
     pub all_list: HashMap<u32, TrackableModel>,
     pub user_list: HashMap<u32, TrackableModel>,
