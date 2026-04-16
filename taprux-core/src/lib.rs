@@ -20,7 +20,13 @@ fn data_dir() -> PathBuf {
     }
     #[cfg(not(target_os = "android"))]
     {
-        std::env::current_dir().unwrap_or_default()
+        dirs::data_dir().unwrap_or_else(|| {
+            let dir = std::env::current_dir().unwrap_or_default();
+
+            tracing::error!(data_dir = %dir.display(), "failed to get data dir will ");
+
+            dir
+        })
     }
 }
 
@@ -28,15 +34,7 @@ static APP_DATA_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     // TODO: for tests I need use tmp_dir
     const BUNDLE_ID: &str = "com.ghuba.taprux";
 
-    dirs::data_dir()
-        .unwrap_or_else(|| {
-            let dir = data_dir();
-
-            tracing::warn!(data_dir = %dir.display(), "failed to get data dir will ");
-
-            dir
-        })
-        .join(BUNDLE_ID)
+    data_dir().join(BUNDLE_ID)
 });
 
 static TOKIO_RUNTIME: LazyLock<Runtime> =
