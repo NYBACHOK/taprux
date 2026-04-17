@@ -34,6 +34,7 @@ import com.ghuba.taprux.ui.pages.insights.InsightsPage
 import com.ghuba.taprux.ui.pages.settings.SettingsScreen
 import com.ghuba.taprux.ui.pages.track.TrackPage
 import com.ghuba.taprux.ui.theme.TapruxTheme
+import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
@@ -57,9 +58,10 @@ class MainActivity : ComponentActivity() {
       // Only runs on first creation, not on color mode changes or anything else
       core.update(Event.Initialize)
     }
+    EventBus.getDefault().register(this)
   }
 
-  @Subscribe(threadMode = ThreadMode.ASYNC)
+  @Subscribe(threadMode = ThreadMode.POSTING)
   @Suppress("unused")
   internal fun onAddTrackableEvent(event: TrackableAdded) {
     Toast.makeText(this, "Added trackable to list", Toast.LENGTH_SHORT).show()
