@@ -88,10 +88,11 @@ impl App for Application {
             occurrences,
         } = model.to_owned();
 
-        let all_trackables = all_list.into_values().collect::<Vec<_>>();
+        let mut all_trackables = all_list.into_values().collect::<Vec<_>>();
         let mut user_trackables = user_list.into_values().collect::<Vec<_>>();
 
         user_trackables.sort_by_key(|this| this.order_key);
+        all_trackables.sort_by_key(|this| this.id);
 
         ViewModel {
             details: details.to_owned(),
