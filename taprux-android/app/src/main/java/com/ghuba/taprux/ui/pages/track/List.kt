@@ -88,7 +88,11 @@ fun ListPage(
                       onDecrement(id)
                     }
                   },
-                  onLongClick = { onNavigateToDetails(id) },
+                  onLongClick = {
+                    if (trackable.hasSubEvents) {
+                      onNavigateToDetails(id)
+                    }
+                  },
               )
             }
           }
