@@ -223,3 +223,68 @@ pub async fn trackable_with_children(
 
     Ok(res)
 }
+
+pub async fn user_trackable_delete(
+    mut e: impl AsMut<SqliteConnection>,
+    trackable_id: u32,
+) -> Result<RawTrackable, sqlx::Error> {
+    let trackable = sqlx::query_as::<_, RawTrackable>(
+        r#"DELETE FROM user_trackables WHERE trackable_id = $1 RETURNING *;"#,
+    )
+    .bind(trackable_id)
+    .fetch_one(e.as_mut())
+    .await?;
+
+    Ok(trackable)
+}
+
+pub async fn trackable_edit(
+    mut e: impl AsMut<SqliteConnection>,
+    trackable_id: u32,
+    name: Option<&str>,
+    svg_icon: Option<&[u8]>,
+    order_key: u32,
+) -> Result<(), sqlx::Error> {
+    if let Some(name) = name {
+        sqlx::query("UPDATE trackables SET name = $1 WHERE id = $2;")
+            .bind(name)
+            .bind(trackable_id)
+            .execute(e.as_mut())
+            .await?;
+    }
+
+    if let Some(svg_icon) = svg_icon {
+        let svg_icon = data_encoding::BASE64.encode(svg_icon);
+        sqlx::query("UPDATE trackables SET svg_icon = $1 WHERE id = $2;")
+            .bind(svg_icon)
+            .bind(trackable_id)
+            .execute(e.as_mut())
+            .await?;
+    }
+
+    sqlx::query("UPDATE user_trackables SET order_key = $1 WHERE trackable_id = $2;")
+        .bind(order_key)
+        .bind(trackable_id)
+        .execute(e.as_mut())
+        .await?;
+
+    Ok(())
+}
+
+pub async fn trackable_sub_add_or_update_reorder(
+    mut e: impl AsMut<SqliteConnection>,
+    items: impl IntoIterator<Item = (u32, u32)>,
+) -> Result<(), sqlx::Error> {
+    for (trackable_id, order_key) in items {
+        sqlx::query(
+            "INSERT INTO user_trackables (trackable_id, order_key) VALUES ($1, $2)
+                ON CONFLICT DO UPDATE SET order_key = $2 WHERE trackable_id = $1;",
+        )
+        .bind(trackable_id)
+        .bind(order_key as u32)
+        .execute(e.as_mut())
+        .await?;
+    }
+
+    Ok(())
+}

@@ -12,6 +12,15 @@ use crate::database::{
 const ELEMENTS_LIMIT: u32 = 100;
 
 #[derive(Facet, Serialize, Deserialize, Clone, Debug)]
+pub struct EditTrackableModel {
+    pub id: u32,
+    pub order_key: u32,
+    pub name: Option<String>,
+    pub svg_icon: Option<Vec<u8>>,
+    pub sub_trackables: Option<HashMap<u32, u32>>,
+}
+
+#[derive(Facet, Serialize, Deserialize, Clone, Debug)]
 pub struct TrackableModel {
     pub id: u32,
     pub order_key: u32,
@@ -162,6 +171,47 @@ pub async fn occurrence_delete(pool: &sqlx::SqlitePool, id: u32) -> anyhow::Resu
     let mut transaction = pool.begin().await?;
 
     database::trackable::trackable_occurrence_delete(&mut transaction, id).await?;
+
+    transaction.commit().await?;
+
+    Ok(())
+}
+
+pub async fn trackables_edit(
+    pool: &sqlx::SqlitePool,
+    EditTrackableModel {
+        id,
+        order_key,
+        name,
+        svg_icon,
+        sub_trackables,
+    }: EditTrackableModel,
+) -> anyhow::Result<()> {
+    let mut transaction = pool.begin().await?;
+
+    database::trackable::trackable_edit(
+        &mut transaction,
+        id,
+        name.as_ref().map(|this| this.as_str()),
+        svg_icon.as_ref().map(|this| this.as_slice()),
+        order_key,
+    )
+    .await?;
+
+    if let Some(sub_trackables) = sub_trackables {
+        database::trackable::trackable_sub_add_or_update_reorder(&mut transaction, sub_trackables)
+            .await?;
+    }
+
+    transaction.commit().await?;
+
+    Ok(())
+}
+
+pub async fn user_trackable_delete(pool: &sqlx::SqlitePool, id: u32) -> anyhow::Result<()> {
+    let mut transaction = pool.begin().await?;
+
+    database::trackable::user_trackable_delete(&mut transaction, id).await?;
 
     transaction.commit().await?;
 

@@ -108,6 +108,20 @@ async fn execute_query(
                 .await
                 .context("updating application settings")?,
         ),
+        QueryRequest::Edit(model) => {
+            logic::trackables_edit(&state.db_pool, model)
+                .await
+                .context("editing trackables")?;
+
+            QueryResponse::EditedTrackable
+        }
+        QueryRequest::DeleteUserTrackable(id) => {
+            logic::user_trackable_delete(&state.db_pool, id)
+                .await
+                .context("deleting trackable from user list")?;
+
+            QueryResponse::DeletedOccurrence(id)
+        }
     };
 
     Ok(response)

@@ -15,6 +15,8 @@ pub enum QueryResponse {
     Clicked(u32),
     DeletedOccurrence(u32),
     AddedUserTrackable,
+    DeletedUserTrackable(u32),
+    EditedTrackable,
     Details(TrackableWithChildrenModel),
     Settings(ApplicationSettings),
 }

@@ -1,4 +1,4 @@
-use crate::logic::ApplicationSettings;
+use crate::logic::{ApplicationSettings, EditTrackableModel};
 
 use super::*;
 
@@ -52,4 +52,6 @@ pub enum QueryRequest {
     Details(u32),
     Settings,
     UpdateSettings(ApplicationSettings),
+    Edit(EditTrackableModel),
+    DeleteUserTrackable(u32),
 }

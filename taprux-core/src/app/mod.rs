@@ -73,6 +73,12 @@ impl App for Application {
                             .and(Command::notify_shell(AppliedChanges::UserTrackable).build());
                     }
                     QueryResponse::Occurrences(occurrences) => model.occurrences = occurrences,
+                    QueryResponse::EditedTrackable => {
+                        return Command::event(Event::Query(QueryRequest::UserTrackables));
+                    }
+                    QueryResponse::DeletedUserTrackable(id) => {
+                        let _ = model.user_list.remove(&id);
+                    }
                 }
                 render()
             }
