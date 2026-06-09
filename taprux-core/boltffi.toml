@@ -1,0 +1,18 @@
+[package]
+name = "com.ghuba.taprux.core"
+crate = "taprux-core"
+version = "0.1.0"
+
+[targets.apple.swift]
+module_name = "TapruxCore"
+
+[targets.android.kotlin]
+package = "com.ghuba.taprux.core"
+
+[targets.android]
+output = "../taprux-android/generated"
+min_sdk = 32
+
+[targets.android.pack]
+output = "../taprux-android/generated/jniLibs"
+

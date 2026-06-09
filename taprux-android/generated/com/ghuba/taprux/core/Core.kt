@@ -181,6 +181,82 @@ enum class AppliedChanges {
     }
 }
 
+data class EditTrackableModel(
+    val id: UInt,
+    val orderKey: UInt,
+    val name: String? = null,
+    val svgIcon: List<UByte>? = null,
+    val subTrackables: Map<UInt, UInt>? = null,
+) {
+    fun serialize(serializer: Serializer) {
+        serializer.increase_container_depth()
+        serializer.serialize_u32(id)
+        serializer.serialize_u32(orderKey)
+        name.serializeOptionOf(serializer) {
+            serializer.serialize_str(it)
+        }
+        svgIcon.serializeOptionOf(serializer) { level1 ->
+            level1.serialize(serializer) {
+                serializer.serialize_u8(it)
+            }
+        }
+        subTrackables.serializeOptionOf(serializer) { level1 ->
+            level1.serialize(serializer) { key, value ->
+                serializer.serialize_u32(key)
+                serializer.serialize_u32(value)
+            }
+        }
+        serializer.decrease_container_depth()
+    }
+
+    fun bincodeSerialize(): ByteArray {
+        val serializer = BincodeSerializer()
+        serialize(serializer)
+        return serializer.get_bytes()
+    }
+
+    companion object {
+        fun deserialize(deserializer: Deserializer): EditTrackableModel {
+            deserializer.increase_container_depth()
+            val id = deserializer.deserialize_u32()
+            val orderKey = deserializer.deserialize_u32()
+            val name =
+                deserializer.deserializeOptionOf {
+                    deserializer.deserialize_str()
+                }
+            val svgIcon =
+                deserializer.deserializeOptionOf {
+                    deserializer.deserializeListOf {
+                        deserializer.deserialize_u8()
+                    }
+                }
+            val subTrackables =
+                deserializer.deserializeOptionOf {
+                    deserializer.deserializeMapOf {
+                        val key = deserializer.deserialize_u32()
+                        val value = deserializer.deserialize_u32()
+                        Pair(key, value)
+                    }
+                }
+            deserializer.decrease_container_depth()
+            return EditTrackableModel(id, orderKey, name, svgIcon, subTrackables)
+        }
+
+        @Throws(DeserializationError::class)
+        fun bincodeDeserialize(input: ByteArray?): EditTrackableModel {
+            if (input == null) {
+                throw DeserializationError("Cannot deserialize null array")
+            }
+            val deserializer = BincodeDeserializer(input)
+            val value = deserialize(deserializer)
+            if (deserializer.get_buffer_offset() < input.size) {
+                throw DeserializationError("Some input bytes were not read")
+            }
+            return value
+        }
+    }
+}
+
 sealed interface Effect {
     fun serialize(serializer: Serializer)
 
@@ -523,6 +599,46 @@ sealed interface QueryRequest {
         }
     }
 
+    data class Edit(
+        val value: com.ghuba.taprux.core.EditTrackableModel,
+    ) : QueryRequest {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(9)
+            value.serialize(serializer)
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): Edit {
+                deserializer.increase_container_depth()
+                val value = com.ghuba.taprux.core.EditTrackableModel.deserialize(deserializer)
+                deserializer.decrease_container_depth()
+                return Edit(value)
+            }
+        }
+    }
+
+    data class DeleteUserTrackable(
+        val value: UInt,
+    ) : QueryRequest {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(10)
+            serializer.serialize_u32(value)
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): DeleteUserTrackable {
+                deserializer.increase_container_depth()
+                val value = deserializer.deserialize_u32()
+                deserializer.decrease_container_depth()
+                return DeleteUserTrackable(value)
+            }
+        }
+    }
+
     companion object {
         @Throws(DeserializationError::class)
         fun deserialize(deserializer: Deserializer): QueryRequest {
@@ -537,6 +653,8 @@ sealed interface QueryRequest {
                 6 -> Details.deserialize(deserializer)
                 7 -> Settings.deserialize(deserializer)
                 8 -> UpdateSettings.deserialize(deserializer)
+                9 -> Edit.deserialize(deserializer)
+                10 -> DeleteUserTrackable.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for QueryRequest: $index")
             }
         }
@@ -707,12 +825,44 @@ sealed interface QueryResponse {
         }
     }
 
+    data class DeletedUserTrackable(
+        val value: UInt,
+    ) : QueryResponse {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(7)
+            serializer.serialize_u32(value)
+            serializer.decrease_container_depth()
+        }
+
+        companion object {
+            fun deserialize(deserializer: Deserializer): DeletedUserTrackable {
+                deserializer.increase_container_depth()
+                val value = deserializer.deserialize_u32()
+                deserializer.decrease_container_depth()
+                return DeletedUserTrackable(value)
+            }
+        }
+    }
+
+    data object EditedTrackable: QueryResponse {
+        override fun serialize(serializer: Serializer) {
+            serializer.increase_container_depth()
+            serializer.serialize_variant_index(8)
+            serializer.decrease_container_depth()
+        }
+
+        fun deserialize(deserializer: Deserializer): EditedTrackable {
+            return EditedTrackable
+        }
+    }
+
     data class Details(
         val value: com.ghuba.taprux.core.TrackableWithChildrenModel,
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(7)
+            serializer.serialize_variant_index(9)
             value.serialize(serializer)
             serializer.decrease_container_depth()
         }
@@ -732,7 +882,7 @@ sealed interface QueryResponse {
     ) : QueryResponse {
         override fun serialize(serializer: Serializer) {
             serializer.increase_container_depth()
-            serializer.serialize_variant_index(8)
+            serializer.serialize_variant_index(10)
             value.serialize(serializer)
             serializer.decrease_container_depth()
         }
@@ -759,8 +909,10 @@ sealed interface QueryResponse {
                 4 -> Clicked.deserialize(deserializer)
                 5 -> DeletedOccurrence.deserialize(deserializer)
                 6 -> AddedUserTrackable.deserialize(deserializer)
-                7 -> Details.deserialize(deserializer)
-                8 -> Settings.deserialize(deserializer)
+                7 -> DeletedUserTrackable.deserialize(deserializer)
+                8 -> EditedTrackable.deserialize(deserializer)
+                9 -> Details.deserialize(deserializer)
+                10 -> Settings.deserialize(deserializer)
                 else -> throw DeserializationError("Unknown variant index for QueryResponse: $index")
             }
         }
@@ -883,8 +1035,9 @@ data object RenderOperation {
     }
 }
 
-/// Request for a side-effect passed from the Core to the Shell. The `EffectId` links
-/// the `Request` with the corresponding call to [`Core::resolve`] to pass the data back
+/// Request for a side-effect passed from the Core to the Shell.
+/// 
+/// The `EffectId` links the `Request` with the corresponding call to [`Core::resolve`] to pass the data back
 /// to the [`App::update`] function (wrapped in the event provided to the capability originating the effect).
 data class Request(
     val id: UInt,
@@ -914,6 +1067,61 @@ data class Request(
 
         @Throws(DeserializationError::class)
         fun bincodeDeserialize(input: ByteArray?): Request {
+            if (input == null) {
+                throw DeserializationError("Cannot deserialize null array")
+            }
+            val deserializer = BincodeDeserializer(input)
+            val value = deserialize(deserializer)
+            if (deserializer.get_buffer_offset() < input.size) {
+                throw DeserializationError("Some input bytes were not read")
+            }
+            return value
+        }
+    }
+}
+
+/// A batch of effect requests from the Core to the Shell, as serialised by
+/// [`Bridge::update`] and [`Bridge::resolve`].
+/// 
+/// The wire format is identical to `Vec<Request<Eff>>` (the newtype is
+/// `serde(transparent)`), so existing shell code that already deserialises
+/// a `Vec<Request>` remains binary-compatible.
+/// 
+/// Registering this type with the type-generation system causes the code
+/// generators to emit a `Requests` type (with a `value` field containing the
+/// list) together with a top-level `bincodeDeserialize` / `BincodeDeserialize`
+/// helper, replacing the hand-written extension files that were previously
+/// appended by `add_extensions()`.
+data class Requests(
+    val value: List<com.ghuba.taprux.core.Request>,
+) {
+    fun serialize(serializer: Serializer) {
+        serializer.increase_container_depth()
+        value.serialize(serializer) {
+            it.serialize(serializer)
+        }
+        serializer.decrease_container_depth()
+    }
+
+    fun bincodeSerialize(): ByteArray {
+        val serializer = BincodeSerializer()
+        serialize(serializer)
+        return serializer.get_bytes()
+    }
+
+    companion object {
+        fun deserialize(deserializer: Deserializer): Requests {
+            deserializer.increase_container_depth()
+            val value =
+                deserializer.deserializeListOf {
+                    com.ghuba.taprux.core.Request.deserialize(deserializer)
+                }
+            deserializer.decrease_container_depth()
+            return Requests(value)
+        }
+
+        @Throws(DeserializationError::class)
+        fun bincodeDeserialize(input: ByteArray?): Requests {
             if (input == null) {
                 throw DeserializationError("Cannot deserialize null array")
             }

@@ -1,12 +1,9 @@
 use std::path::PathBuf;
 
+use anyhow::Result;
 use clap::{Parser, ValueEnum};
-use crux_core::{
-    cli::{BindgenArgsBuilder, bindgen},
-    type_generation::facet::{Config, TypeRegistry},
-};
+use crux_core::type_generation::facet::{Config, TypeRegistry};
 use log::info;
-use uniffi::deps::anyhow::Result;
 
 use taprux_core::Application;
 
@@ -37,11 +34,7 @@ fn main() -> Result<()> {
         Language::Kotlin => "com.ghuba.taprux.core",
         Language::Typescript => "app",
     };
-
-    let config = Config::builder(name, &args.output_dir)
-        .add_extensions()
-        .add_runtimes()
-        .build();
+    let config = Config::builder(name, &args.output_dir).build();
 
     match args.language {
         Language::Swift => {
@@ -51,13 +44,6 @@ fn main() -> Result<()> {
         Language::Kotlin => {
             info!("Typegen for Kotlin");
             typegen_app.kotlin(&config)?;
-
-            info!("Bindgen for Kotlin");
-            let bindgen_args = BindgenArgsBuilder::default()
-                .crate_name(env!("CARGO_PKG_NAME").to_string())
-                .kotlin(&args.output_dir)
-                .build()?;
-            bindgen(&bindgen_args)?;
         }
         Language::Typescript => {
             info!("Typegen for TypeScript");

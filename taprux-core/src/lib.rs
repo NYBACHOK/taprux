@@ -3,7 +3,11 @@ use std::{path::PathBuf, sync::LazyLock};
 pub use crux_core::Core;
 use tokio::runtime::Runtime;
 
+#[cfg(feature = "ffi")]
 pub mod ffi;
+
+#[cfg(feature = "ffi")]
+pub use ffi::CoreFFI;
 
 mod app;
 mod database;
@@ -39,11 +43,3 @@ static APP_DATA_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
 
 static TOKIO_RUNTIME: LazyLock<Runtime> =
     LazyLock::new(|| tokio::runtime::Runtime::new().expect("failed to init runtime"));
-
-#[cfg(feature = "uniffi")]
-const _: () = assert!(
-    uniffi::check_compatible_version("0.29.4"),
-    "please use uniffi v0.29.4"
-);
-#[cfg(feature = "uniffi")]
-uniffi::setup_scaffolding!();

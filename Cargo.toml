@@ -10,10 +10,9 @@ serde = "1.0"
 thiserror = "2.0"
 
 # crux family
-crux_core = "0.17"
-facet = "=0.31"
-uniffi = "=0.29.4"
-uniffi_bindgen = "=0.29.4"
+crux_core = "0.19"
+facet = "=0.44"
+boltffi = "0.25"
 
 [workspace.lints.rust]
 rust_2018_idioms = "deny"
@@ -24,3 +23,4 @@ unsafe-code = "deny"
 
 [workspace.lints.clippy]
 unused_async = "deny"
+pedantic = "warn"

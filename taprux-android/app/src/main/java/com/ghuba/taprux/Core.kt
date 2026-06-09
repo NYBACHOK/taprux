@@ -22,14 +22,11 @@ import org.greenrobot.eventbus.EventBus
 open class Core : androidx.lifecycle.ViewModel() {
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-  private val coreFfi =
-      CoreFfi(
-          object : CruxShell {
-            override fun processEffects(bytes: ByteArray) {
-              scope.launch { handleEffects(bytes) }
-            }
-          }
-      )
+  private val coreFfi =CoreFfi(object: CruxShell {
+    override fun processEffects(bytes: ByteArray) {
+      scope.launch { handleEffects(bytes) }
+    }
+  })
 
   private val _viewModel: MutableStateFlow<ViewModel> = MutableStateFlow(getViewModel())
   val viewModel: StateFlow<ViewModel> = _viewModel.asStateFlow()
@@ -46,7 +43,7 @@ open class Core : androidx.lifecycle.ViewModel() {
 
   private fun handleEffects(effects: ByteArray) {
     val requests = Requests.bincodeDeserialize(effects)
-    for (request in requests) {
+    for (request in requests.value) {
       processRequest(request)
     }
   }
