@@ -3,68 +3,96 @@ use std::sync::Arc;
 use crux_core::{
     Core,
     bridge::{BincodeFfiFormat, EffectId},
-    middleware::{Bridge, HandleEffectLayer, Layer},
+    effects::{
+        EffectRouter, Routes,
+        routes::{Buffer, Serialized},
+    },
 };
 
-use crate::app::{Application, QueryMiddleware};
+use crate::{Application, QueryRequest};
 
-/// For the Shell to provide
 #[boltffi::export]
 pub trait CruxShell: Send + Sync {
     /// Called when any effects resulting from an asynchronous process
     /// need processing by the shell.
     ///
-    /// The bytes are a serialized vector of requests
+    /// The bytes are a serialized vector of requests.
     fn process_effects(&self, bytes: Vec<u8>);
 }
 
-/// The main interface used by the shell
+#[derive(Clone)]
+pub struct EffectRoutes {
+    pub(crate) serialized: Arc<Serialized<Application, Self, BincodeFfiFormat>>,
+    pub(crate) query: Arc<Buffer<QueryRequest>>,
+}
 
+impl Routes<Application> for EffectRoutes {
+    fn new(router: std::sync::Weak<crux_core::effects::EffectRouter<Application, Self>>) -> Self {
+        Self {
+            serialized: Arc::new(Serialized::new(router.clone())),
+            query: Arc::new(Buffer::default()),
+        }
+    }
+}
+
+/// The main interface used by the shell
+///
 pub struct CoreFFI {
-    core: Bridge<HandleEffectLayer<Core<Application>, QueryMiddleware>, BincodeFfiFormat>,
+    router: Arc<EffectRouter<Application, EffectRoutes>>,
 }
 
 #[boltffi::export]
+#[allow(clippy::missing_panics_doc)]
 impl CoreFFI {
-    #[must_use]
     pub fn new(shell: Arc<dyn CruxShell>) -> Self {
         crate::setup::setup_logger();
 
-        let core = Core::<Application>::new()
-            .handle_effects_using(QueryMiddleware)
-            .bridge::<BincodeFfiFormat>(move |effect_bytes| match effect_bytes {
-                Ok(effect) => shell.process_effects(effect),
-                Err(e) => panic!("{e}"),
-            });
+        let router = EffectRouter::new(Core::new(), move |routes: EffectRoutes| {
+            let shell = shell.clone();
 
-        Self { core }
+            move |effect| match effect {
+                crate::Effect::Query(req) => {
+                    routes.query.push(req);
+                }
+                effect => {
+                    let bytes = routes
+                        .serialized
+                        .serialize(effect)
+                        .expect("serialized effect request should encode");
+
+                    shell.process_effects(bytes);
+                }
+            }
+        });
+
+        Self { router }
     }
 
     #[must_use]
     pub fn update(&self, data: &[u8]) -> Vec<u8> {
-        let mut effects = Vec::new();
-        match self.core.update(data, &mut effects) {
-            Ok(()) => effects,
+        match self.router.routes.serialized.update(data) {
+            Ok(()) => Vec::new(),
             Err(e) => panic!("{e}"),
         }
     }
 
     #[must_use]
     pub fn resolve(&self, id: u32, data: &[u8]) -> Vec<u8> {
-        let mut effects = Vec::new();
-        match self.core.resolve(EffectId(id), data, &mut effects) {
-            Ok(()) => effects,
-            Err(e) => panic!("{e}"),
-        }
+        self.router
+            .routes
+            .serialized
+            .resolve(EffectId(id), data)
+            .expect("failed to resolve effect");
+
+        Vec::new()
     }
 
     #[must_use]
     pub fn view(&self) -> Vec<u8> {
-        let mut view_model = Vec::new();
-
-        match self.core.view(&mut view_model) {
-            Ok(()) => view_model,
-            Err(e) => panic!("{e}"),
-        }
+        self.router
+            .routes
+            .serialized
+            .view()
+            .expect("view model should serialize")
     }
 }
