@@ -1,16 +1,15 @@
+import com.android.build.api.dsl.LibraryExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   alias(libs.plugins.android.library)
-  alias(libs.plugins.kotlin.android)
 }
 
-android {
+configure<LibraryExtension> {
+
   namespace = "com.ghuba.taprux.core"
 
-  compileSdk {
-    version = release(36)
-  }
+  compileSdk = 36
 
   defaultConfig {
     minSdk = 32
@@ -21,16 +20,10 @@ android {
     targetCompatibility = JavaVersion.VERSION_11
   }
 
-  kotlin {
-    compilerOptions {
-      jvmTarget = JvmTarget.JVM_11
-    }
-  }
-
   sourceSets {
     getByName("main") {
-      kotlin.srcDirs("${projectDir}/../generated")
-      jniLibs.srcDirs("${projectDir}/../generated/jniLibs")
+      kotlin.directories.add("${projectDir}/../generated")
+      jniLibs.directories.add("${projectDir}/../generated/jniLibs")
     }
   }
 }
