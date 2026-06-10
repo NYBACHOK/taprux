@@ -517,7 +517,7 @@ boltffi_input_cleanup:
     if (_boltffi_input_error) return NULL;
     return boltffi_buf_to_jbytearray(env, _buf);
 }
-JNIEXPORT jbyteArray JNICALL Java_com_ghuba_taprux_core_Native_boltffi_1core_1f_1f_1i_1resolve(JNIEnv *env, jclass cls, jlong handle, jint effect_id, jbyteArray data) {
+JNIEXPORT jbyteArray JNICALL Java_com_ghuba_taprux_core_Native_boltffi_1core_1f_1f_1i_1resolve(JNIEnv *env, jclass cls, jlong handle, jint id, jbyteArray data) {
     if (handle == 0) return NULL;
     bool _boltffi_input_error = false;
 
@@ -526,7 +526,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_ghuba_taprux_core_Native_boltffi_1core_1f_
     if (_data_ptr == NULL) { _data_len = 0; _boltffi_input_error = true; }
     FfiBuf_u8 _buf = {0};
     if (_boltffi_input_error) goto boltffi_input_cleanup;
-    _buf = boltffi_core_f_f_i_resolve((void*)handle, effect_id, (const uint8_t*)_data_ptr, (uintptr_t)_data_len);
+    _buf = boltffi_core_f_f_i_resolve((void*)handle, id, (const uint8_t*)_data_ptr, (uintptr_t)_data_len);
 boltffi_input_cleanup:
     if (_data_ptr != NULL) (*env)->ReleaseByteArrayElements(env, data, (jbyte*)_data_ptr, JNI_ABORT);
     if (_boltffi_input_error) return NULL;

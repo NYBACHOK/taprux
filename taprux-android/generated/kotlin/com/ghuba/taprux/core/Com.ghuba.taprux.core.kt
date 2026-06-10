@@ -593,8 +593,8 @@ class CoreFfi private constructor(internal val handle: Long) : AutoCloseable {
     }
 
 
-    fun resolve(effectId: UInt, `data`: ByteArray): ByteArray {
-        val buf = Native.boltffi_core_f_f_i_resolve(handle, effectId.toInt(), `data`)
+    fun resolve(id: UInt, `data`: ByteArray): ByteArray {
+        val buf = Native.boltffi_core_f_f_i_resolve(handle, id.toInt(), `data`)
             ?: throw FfiException(-1, "Null buffer returned")
         return useWireBytes(buf) { buffer ->
             buffer.remaining().let { n -> ByteArray(n).also { buffer.get(it) } }
@@ -612,6 +612,9 @@ class CoreFfi private constructor(internal val handle: Long) : AutoCloseable {
 }
 
 /**
+ * For the Shell to provide
+ */
+/**
  * ### Thread Safety
  *
  * Callback methods may be invoked from any thread and the thread is not guaranteed to be
@@ -623,7 +626,7 @@ interface CruxShell {
      * Called when any effects resulting from an asynchronous process
      * need processing by the shell.
      *
-     * The bytes are a serialized vector of requests.
+     * The bytes are a serialized vector of requests
      */
     fun processEffects(bytes: ByteArray)
 }
@@ -679,7 +682,7 @@ private class CruxShellProxy(private val handle: Long) : CruxShell {
      * Called when any effects resulting from an asynchronous process
      * need processing by the shell.
      *
-     * The bytes are a serialized vector of requests.
+     * The bytes are a serialized vector of requests
      */
 
     override fun processEffects(bytes: ByteArray) {
@@ -851,7 +854,7 @@ private object Native {
     @JvmStatic external fun boltffi_core_f_f_i_new(shell: Long): Long
     @JvmStatic external fun boltffi_core_f_f_i_free(handle: Long)
     @JvmStatic external fun boltffi_core_f_f_i_update(handle: Long, data: ByteArray): ByteArray?
-    @JvmStatic external fun boltffi_core_f_f_i_resolve(handle: Long, effect_id: Int, data: ByteArray): ByteArray?
+    @JvmStatic external fun boltffi_core_f_f_i_resolve(handle: Long, id: Int, data: ByteArray): ByteArray?
     @JvmStatic external fun boltffi_core_f_f_i_view(handle: Long): ByteArray?
     @JvmStatic external fun boltffiCallbackCruxShellRelease(handle: Long)
     @JvmStatic external fun boltffiCallbackCruxShellProcessEffects(handle: Long, bytes: ByteBuffer): Unit

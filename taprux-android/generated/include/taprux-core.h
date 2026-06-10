@@ -39,7 +39,7 @@ typedef struct CruxShellVTable {
 
 void boltffi_register_crux_shell_vtable(const struct CruxShellVTable *vtable);
 BoltFFICallbackHandle boltffi_create_crux_shell_handle(uint64_t handle);
-struct CoreFFI * boltffi_core_f_f_i_new(BoltFFICallbackHandle shell);void boltffi_core_f_f_i_free(struct CoreFFI * handle);FfiBuf_u8 boltffi_core_f_f_i_update(const struct CoreFFI * self, const uint8_t* data, uintptr_t data_len);FfiBuf_u8 boltffi_core_f_f_i_resolve(const struct CoreFFI * self, uint32_t effect_id, const uint8_t* data, uintptr_t data_len);FfiBuf_u8 boltffi_core_f_f_i_view(const struct CoreFFI * self);
+struct CoreFFI * boltffi_core_f_f_i_new(BoltFFICallbackHandle shell);void boltffi_core_f_f_i_free(struct CoreFFI * handle);FfiBuf_u8 boltffi_core_f_f_i_update(const struct CoreFFI * self, const uint8_t* data, uintptr_t data_len);FfiBuf_u8 boltffi_core_f_f_i_resolve(const struct CoreFFI * self, uint32_t id, const uint8_t* data, uintptr_t data_len);FfiBuf_u8 boltffi_core_f_f_i_view(const struct CoreFFI * self);
 
 void boltffi_free_string(FfiString s);
 void boltffi_free_buf(FfiBuf_u8 buf);
